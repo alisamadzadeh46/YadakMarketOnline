@@ -60,6 +60,14 @@ The repository is public. The following must never be committed:
    - `pre-push` re-scans every commit that is about to be pushed.
 3. **CI** (`.github/workflows/repo-guard.yml`) runs the same checks on every push and pull request.
 
+The hooks look for Python in `venv/` or `.venv/` inside the repository, then
+on the `PATH`. When neither works (for example a broken `python` alias on
+Windows), point them to an interpreter explicitly:
+
+```bash
+git config repo-guard.python "C:/path/to/python.exe"
+```
+
 The rules live in `tools/repo_guard/rules.py`. Each rule is a small declarative
 object, so new checks are added by appending to `PATH_RULES` or `CONTENT_RULES`.
 
