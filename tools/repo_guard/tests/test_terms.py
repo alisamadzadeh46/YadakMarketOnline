@@ -31,6 +31,10 @@ class BuiltinPhraseTests(unittest.TestCase):
         start, end = self.matcher.search(text)
         self.assertEqual(text[start:end], "Blocked-Phrase_Here")
 
+    def test_words_inside_hashes_are_ignored(self):
+        text = '"integrity": "sha512-Vj1jF3cPfxg7OAfoForbidden2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc=="'
+        self.assertIsNone(self.matcher.search(text))
+
     def test_partial_words_do_not_match(self):
         self.assertIsNone(self.matcher.search("forbiddance and blocked phrases"))
 

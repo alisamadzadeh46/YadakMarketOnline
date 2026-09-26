@@ -73,6 +73,22 @@ def iter_words(text: str) -> Iterator[tuple[str, int, int]]:
             yield word[start:end].lower(), offset + start, offset + end
 
 
+# Hashes, keys and base64 data (e.g. lock-file "integrity" values) are long runs
+# of letters and digits; any word found inside them is a coincidence.
+_ENCODED_BLOB = re.compile(r"[A-Za-z0-9+/=_-]{32,}")
+
+
+def _blank_encoded_blobs(text: str) -> str:
+    """Replace encoded blobs with spaces, keeping every other offset intact."""
+
+    def blank(match: re.Match[str]) -> str:
+        blob = match.group()
+        is_encoded = any(char.isdigit() for char in blob) and any(char.isalpha() for char in blob)
+        return " " * len(blob) if is_encoded else blob
+
+    return _ENCODED_BLOB.sub(blank, text)
+
+
 def _literal_pattern(literal: str) -> re.Pattern[str] | None:
     """Compile a tolerant search pattern for a project specific literal.
 
@@ -129,7 +145,7 @@ class TermMatcher:
         return self._search_phrases(text)
 
     def _search_phrases(self, text: str) -> tuple[int, int] | None:
-        words = list(iter_words(text))
+        words = list(iter_words(_blank_encoded_blobs(text)))
         for index in range(len(words)):
             window = words[index : index + MAX_PHRASE_WORDS]
             for size in range(1, len(window) + 1):
