@@ -20,7 +20,20 @@ from .scanner import Scanner, is_content_scanned
 
 REDACTIONS_FILE = ".redactions.local"
 MAX_SCANNED_BYTES = 5 * 1024 * 1024
+# GitHub warns above 50 MB and rejects files above 100 MB.
+MAX_PUBLISHED_BYTES = 50 * 1024 * 1024
 _BINARY_SNIFF_BYTES = 8192
+
+# Files that only exist inside the data directory of a database server. Such
+# directories (usually Docker volumes) are held back as a whole, whatever
+# their name, because they contain the complete production data.
+_SERVICE_DATA_MARKERS = {
+    "pg_version": "PostgreSQL",
+    "ibdata1": "MySQL",
+    "appendonly.aof": "Redis",
+    "wiredtiger": "MongoDB",
+    "mongod.lock": "MongoDB",
+}
 
 # Seed data is often exported from the production database, so it is held
 # back until someone confirms it contains no real customer or seller records.
@@ -38,6 +51,7 @@ class ImportPlan:
     """What ``apply_plan`` will do; built without touching any file."""
 
     to_stage: list[str] = field(default_factory=list)
+    sizes: dict[str, int] = field(default_factory=dict)
     rewrites: dict[str, str] = field(default_factory=dict)
     redactions: list[Redaction] = field(default_factory=list)
     held_back: dict[str, str] = field(default_factory=dict)
@@ -46,10 +60,20 @@ class ImportPlan:
 
 def build_plan(scanner: Scanner, root: Path) -> ImportPlan:
     plan = ImportPlan(virtualenvs=find_virtualenvs(root))
-    for path in gitio.pending_files():
-        if any(path.startswith(f"{venv}/") for venv in plan.virtualenvs):
-            continue
-        _plan_file(scanner, root, path, plan)
+    pending = [
+        path for path in gitio.pending_files() if not any(path.startswith(f"{venv}/") for venv in plan.virtualenvs)
+    ]
+
+    data_directories = find_service_data_directories(pending)
+    held_counts = dict.fromkeys(data_directories, 0)
+    for path in pending:
+        directory = next((item for item in data_directories if path.startswith(f"{item}/")), None)
+        if directory is None:
+            _plan_file(scanner, root, path, plan)
+        else:
+            held_counts[directory] += 1
+    for directory, service in data_directories.items():
+        plan.held_back[f"{directory}/"] = f"{service} data directory ({held_counts[directory]} files)"
     return plan
 
 
@@ -62,6 +86,37 @@ def apply_plan(plan: ImportPlan, root: Path) -> None:
     if plan.virtualenvs:
         _exclude_locally(root, [f"/{venv}/" for venv in plan.virtualenvs])
     gitio.add_paths(plan.to_stage)
+
+
+def size_by_top_level(plan: ImportPlan) -> dict[str, tuple[int, int]]:
+    """Map each top-level directory (or root file) to ``(file_count, total_bytes)``."""
+    totals: dict[str, tuple[int, int]] = {}
+    for path in plan.to_stage:
+        parts = PurePosixPath(path).parts
+        key = f"{parts[0]}/" if len(parts) > 1 else parts[0]
+        count, size = totals.get(key, (0, 0))
+        totals[key] = (count + 1, size + plan.sizes.get(path, 0))
+    return dict(sorted(totals.items()))
+
+
+def largest_files(plan: ImportPlan, limit: int = 10) -> list[tuple[str, int]]:
+    ranked = sorted(((path, plan.sizes.get(path, 0)) for path in plan.to_stage), key=lambda item: -item[1])
+    return ranked[:limit]
+
+
+def find_service_data_directories(paths: list[str]) -> dict[str, str]:
+    """Return ``{directory: service}`` for database data directories in ``paths``.
+
+    Only the outermost directory is kept when data directories are nested.
+    """
+    found: dict[str, str] = {}
+    for path in sorted(paths, key=lambda item: item.count("/")):
+        posix = PurePosixPath(path)
+        service = _SERVICE_DATA_MARKERS.get(posix.name.lower())
+        directory = str(posix.parent)
+        if service and directory != "." and not any(directory.startswith(f"{known}/") for known in found):
+            found.setdefault(directory, service)
+    return found
 
 
 def find_virtualenvs(root: Path) -> list[str]:
@@ -87,6 +142,12 @@ def _plan_file(scanner: Scanner, root: Path, path: str, plan: ImportPlan) -> Non
     if needs_review(path):
         plan.held_back[path] = "data file; publish it only after checking it holds no real records"
         return
+
+    size = (root / path).stat().st_size
+    if size > MAX_PUBLISHED_BYTES:
+        plan.held_back[path] = f"too large to publish ({size / 1024 / 1024:.0f} MB)"
+        return
+    plan.sizes[path] = size
 
     data = (root / path).read_bytes()
     is_binary = b"\0" in data[:_BINARY_SNIFF_BYTES]

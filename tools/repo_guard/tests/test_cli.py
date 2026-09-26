@@ -126,6 +126,18 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("shop/fixtures/sellers.json", output)
         self.assertIn("/venv2/", (self.root / ".git/info/exclude").read_text(encoding="utf-8"))
 
+    def test_prepare_holds_back_database_data_directories(self):
+        self.write("docker/data/db/PG_VERSION", "16\n")
+        self.write("docker/data/db/base/1/PG_VERSION", "16\n")
+        self.write("docker/data/db/base/1/1259", "rows\n")
+        self.write("docker/compose.yml", "services: {}\n")
+
+        exit_code, output = self.run_cli("prepare", "--yes")
+
+        self.assertEqual(exit_code, EXIT_OK, output)
+        self.assertEqual(self.staged(), {"docker/compose.yml"})
+        self.assertIn("docker/data/db/  - PostgreSQL data directory (3 files)", output)
+
     def test_prepare_changes_nothing_without_confirmation(self):
         self.write("shop/settings.py", f'SUPPORT_PHONE = "{SAMPLE_PHONE}"\n')
         exit_code, _ = self.run_cli("prepare", stdin="n\n")

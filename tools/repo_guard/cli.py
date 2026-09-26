@@ -20,6 +20,8 @@ HOOKS_DIRECTORY = ".githooks"
 MAX_FILE_BYTES = 5 * 1024 * 1024
 _BINARY_SNIFF_BYTES = 8192
 
+_MAX_LISTED_HELD_BACK = 40
+
 EXIT_OK = 0
 EXIT_FINDINGS = 1
 EXIT_ERROR = 2
@@ -215,6 +217,11 @@ def _command_prepare(scanner: Scanner, args: argparse.Namespace) -> int:
 def _print_plan(plan: importer.ImportPlan) -> None:
     print("\nPublication plan\n")
     print(f"  Files to publish: {len(plan.to_stage)}")
+    for name, (count, size) in importer.size_by_top_level(plan).items():
+        print(f"      {name:<40} {count:>6} file(s) {_format_size(size):>10}")
+    print("  Largest files:")
+    for path, size in importer.largest_files(plan):
+        print(f"      {_format_size(size):>10}  {path}")
 
     if plan.rewrites:
         print(
@@ -229,9 +236,11 @@ def _print_plan(plan: importer.ImportPlan) -> None:
             print(f"      {path}  ({summary})")
 
     if plan.held_back:
-        print(f"  Files held back (not published): {len(plan.held_back)}")
-        for path, reason in plan.held_back.items():
+        print(f"  Held back (not published): {len(plan.held_back)}")
+        for path, reason in list(plan.held_back.items())[:_MAX_LISTED_HELD_BACK]:
             print(f"      {path}  - {reason}")
+        if len(plan.held_back) > _MAX_LISTED_HELD_BACK:
+            print(f"      ... and {len(plan.held_back) - _MAX_LISTED_HELD_BACK} more")
 
     if plan.virtualenvs:
         print(f"  Virtual environments ignored: {', '.join(plan.virtualenvs)}")
@@ -241,6 +250,14 @@ def _print_plan(plan: importer.ImportPlan) -> None:
             f"\nThe original values are saved to {importer.REDACTIONS_FILE} (git-ignored) so they can be moved to .env."
         )
     print()
+
+
+def _format_size(size: float) -> str:
+    for unit in ("B", "KB", "MB"):
+        if size < 1024:
+            return f"{size:.0f} {unit}"
+        size /= 1024
+    return f"{size:.1f} GB"
 
 
 def _confirm(question: str) -> bool:

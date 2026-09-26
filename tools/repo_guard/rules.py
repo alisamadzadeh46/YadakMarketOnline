@@ -145,6 +145,9 @@ PATH_RULES: tuple[PathRule, ...] = (
             "id_dsa*",
             "id_ecdsa*",
             "id_ed25519*",
+            ".htpasswd",
+            "*.htpasswd",
+            ".erlang.cookie",
             "credentials.json",
             "secrets.json",
             "service-account*.json",
@@ -155,6 +158,33 @@ PATH_RULES: tuple[PathRule, ...] = (
         message="Machine or server specific settings belong in .env, not in the repository.",
         file_patterns=("local_settings.py", "settings_local.py", "*.local"),
         directories=frozenset({"secrets"}),
+    ),
+    PathRule(
+        rule_id="service-data",
+        message="Data directories of databases and message brokers (Docker volumes) hold real records.",
+        directories=frozenset(
+            {
+                "pgdata",
+                "postgres_data",
+                "postgres-data",
+                "postgresql_data",
+                "db_data",
+                "db-data",
+                "dbdata",
+                "mysql_data",
+                "mysql-data",
+                "mariadb_data",
+                "mongo_data",
+                "mongodb_data",
+                "redis_data",
+                "redis-data",
+                "rabbitmq_data",
+                "rabbitmq-data",
+                "mnesia",
+                "elasticsearch_data",
+                "volumes",
+            }
+        ),
     ),
     PathRule(
         rule_id="uploaded-media",
@@ -175,7 +205,10 @@ PATH_RULES: tuple[PathRule, ...] = (
 
 _NATIONAL_ID_CONTEXT = re.compile(r"national|mell?i|کد\s*ملی|شماره\s*ملی", re.IGNORECASE)
 _PAYMENT_CONTEXT = re.compile(r"merchant|zarin", re.IGNORECASE)
-_NON_SECRET_VALUES = frozenset({"bearer", "basic", "token", "true", "false", "none", "null", "required", "hidden"})
+# "guest" is the documented RabbitMQ default account, not a secret.
+_NON_SECRET_VALUES = frozenset(
+    {"bearer", "basic", "token", "true", "false", "none", "null", "required", "hidden", "guest"}
+)
 _SECRET_KEYWORDS = re.compile(r"pass|pwd|secret|key|token|merchant", re.IGNORECASE)
 
 
@@ -372,7 +405,8 @@ CONTENT_RULES: tuple[ContentRule, ...] = (
         rule_id="hardcoded-secret",
         message="Credential assigned a literal value; load it from the environment (.env) instead.",
         pattern=re.compile(
-            r"\b\w*(?:password|passwd|pwd|secret|api[_-]?key|apikey|access[_-]?key|auth[_-]?key|token)\w*"
+            # The lookbehind skips names that are part of a file path, e.g. "nginx/.htpasswd".
+            r"(?<![./\\-])\b\w*(?:password|passwd|pwd|secret|api[_-]?key|apikey|access[_-]?key|auth[_-]?key|token)\w*"
             r"[\"']?\s*(?:=|:|=>)\s*[rbuf]?[\"']([^\"'\s]{4,})[\"']",
             re.IGNORECASE,
         ),
@@ -394,8 +428,9 @@ CONTENT_RULES: tuple[ContentRule, ...] = (
         rule_id="config-secret",
         message="Configuration files must not contain real credentials; keep them in .env.",
         pattern=re.compile(
-            r"^\s*(?:export\s+|set\s+)?[\"']?[\w.-]*"
-            r"(?:password|passwd|pwd|secret|api[_-]?key|token|merchant[_-]?id)[\w.-]*"
+            # Optional "- " prefix: list style environment entries in docker-compose files.
+            r"^\s*(?:-\s+)?(?:export\s+|set\s+)?[\"']?[\w.-]*"
+            r"(?:pass|pwd|secret|api[_-]?key|token|merchant[_-]?id)[\w.-]*"
             r"[\"']?\s*[:=]\s*[\"']?([^\s\"'#]{4,})",
             re.IGNORECASE,
         ),

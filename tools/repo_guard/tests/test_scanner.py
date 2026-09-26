@@ -36,6 +36,9 @@ class PathRuleTests(ScannerTestCase):
             ".repo-guard.local": "local-settings",
             "media/sellers/card.jpg": "uploaded-media",
             "sellers_export.csv": "data-export",
+            "docker/pgdata/base/1/1259": "service-data",
+            "rabbitmq/mnesia/rabbit@host/cluster_nodes.config": "service-data",
+            "nginx/.htpasswd": "key-file",
         }
         for path, rule_id in expectations.items():
             with self.subTest(path=path):
@@ -98,9 +101,19 @@ class ContentRuleTests(ScannerTestCase):
             "'password': 'گذرواژه'",
             "PASSWORD_FIELD = 'new_password'",
             "success_url = reverse_lazy('password_reset_done')",
+            '"nginx/.htpasswd": "key-file",',
         ):
             with self.subTest(text=text):
                 self.assertEqual(self.line_rules(text, "shop/settings.py"), set())
+
+    def test_compose_and_broker_credentials(self):
+        for path, text in (
+            ("docker-compose.yml", "      - RABBITMQ_DEFAULT_PASS=k8Qz3vTn1p"),  # repo-guard: allow
+            ("docker-compose.prod.yml", "      POSTGRES_PASSWORD: k8Qz3vTn1p"),  # repo-guard: allow
+            ("rabbitmq/rabbitmq.conf", "default_pass = k8Qz3vTn1p"),  # repo-guard: allow
+        ):
+            with self.subTest(path=path):
+                self.assertIn("config-secret", self.line_rules(text, path))
 
     def test_config_files_may_reference_secrets(self):
         for path, text in (
@@ -109,6 +122,9 @@ class ContentRuleTests(ScannerTestCase):
             ("deploy/backup.sh", 'export PGPASSWORD="$DB_PASSWORD"'),
             ("deploy/start.bat", "set DB_PASSWORD=%DB_PASSWORD%"),
             ("docker-compose.yml", "      POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}"),
+            ("docker-compose.yml", "      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}"),
+            ("rabbitmq/rabbitmq.conf", "default_pass = guest"),
+            ("nginx/default.conf", "        proxy_pass http://backend:8000;"),
         ):
             with self.subTest(path=path, text=text):
                 self.assertEqual(self.line_rules(text, path), set())

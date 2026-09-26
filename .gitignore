@@ -64,6 +64,32 @@ backups/
 *.xls
 *.xlsx
 
+# Database and message broker data (Docker volumes)
+pgdata/
+postgres_data/
+postgres-data/
+postgresql_data/
+db_data/
+db-data/
+dbdata/
+mysql_data/
+mysql-data/
+mariadb_data/
+mongo_data/
+mongodb_data/
+redis_data/
+redis-data/
+rabbitmq_data/
+rabbitmq-data/
+mnesia/
+elasticsearch_data/
+volumes/
+
+# Web server and message broker credentials
+.htpasswd
+*.htpasswd
+.erlang.cookie
+
 # User uploads (product photos, seller documents)
 media/
 uploads/
@@ -112,6 +138,20 @@ celerybeat.pid
 # Front-end
 # =============================================================================
 node_modules/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.parcel-cache/
+.vite/
+.eslintcache
+*.tsbuildinfo
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
 
 # =============================================================================
 # Editors and operating systems
