@@ -82,6 +82,14 @@ class ContentRuleTests(ScannerTestCase):
     def test_trust_seal_codes(self):
         seal = "<a href='https://trustseal.enamad.ir/?id=412345&Code=Qw3rTy'>"  # repo-guard: allow
         self.assertIn("trust-seal", self.line_rules(seal, "templates/footer.html"))
+        metadata = 'other: { enamad: "41234567" },'  # repo-guard: allow
+        self.assertIn("trust-seal", self.line_rules(metadata, "app/layout.tsx"))
+        badge = "<img src='https://trustseal.enamad.ir/logo.aspx' code='Qw3rTyUiOp1234'>"  # repo-guard: allow
+        self.assertIn("trust-seal", self.line_rules(badge, "components/Footer.tsx"))
+        bitpay = 'href="https://bitpay.ir/certificate-412345-parts-shop.ir"'  # repo-guard: allow
+        self.assertIn("trust-seal", self.line_rules(bitpay, "components/Footer.tsx"))
+        configured = "other: SITE.trust.enamadMeta ? { enamad: SITE.trust.enamadMeta } : {},"
+        self.assertEqual(self.line_rules(configured, "app/layout.tsx"), set())
         templated = "<a href='https://trustseal.enamad.ir/?id={{ enamad_id }}'>"
         self.assertEqual(self.line_rules(templated, "templates/footer.html"), set())
 
@@ -90,6 +98,8 @@ class ContentRuleTests(ScannerTestCase):
         env_default = 'os.getenv("SMS_API_KEY", "k8Qz3vTn1pLw")'  # repo-guard: allow
         config_line = "DB_PASSWORD=k8Qz3vTn1p"  # repo-guard: allow
         self.assertIn("hardcoded-secret", self.line_rules(assignment))
+        attribute = 'self.password = "k8Qz3vTn1pLw"'  # repo-guard: allow
+        self.assertIn("hardcoded-secret", self.line_rules(attribute))
         self.assertIn("env-default-secret", self.line_rules(env_default))
         self.assertIn("config-secret", self.line_rules(config_line, "deploy/.env.production"))
 

@@ -244,6 +244,10 @@ def _is_real_query_value(match: re.Match[str], _line: str) -> bool:
     return not validators.is_placeholder(match.group(1))
 
 
+def _mentions_enamad(match: re.Match[str], line: str) -> bool:
+    return "enamad" in line.lower() and not validators.is_placeholder(match.group(1))
+
+
 def _is_real_secret_value(match: re.Match[str], _line: str) -> bool:
     """Accept a captured value unless it is a label, URL, path or placeholder."""
     value = match.group(1)
@@ -372,6 +376,30 @@ CONTENT_RULES: tuple[ContentRule, ...] = (
         group=1,
     ),
     ContentRule(
+        rule_id="trust-seal",
+        message=_TRUST_SEAL_MESSAGE,
+        # The same meta tag written as a JS/JSON object, e.g. Next.js metadata {enamad: "..."}.
+        pattern=re.compile(r"\benamad[\"']?\s*[:=]\s*[\"']([^\"'\s]+)[\"']", re.IGNORECASE),
+        validator=_is_real_query_value,
+        group=1,
+    ),
+    ContentRule(
+        rule_id="trust-seal",
+        message=_TRUST_SEAL_MESSAGE,
+        # The "code" attribute eNamad adds to its badge image.
+        pattern=re.compile(r"\bcode\s*=\s*[\"']([A-Za-z0-9]{12,})[\"']", re.IGNORECASE),
+        validator=_mentions_enamad,
+        group=1,
+    ),
+    ContentRule(
+        rule_id="trust-seal",
+        message=_TRUST_SEAL_MESSAGE,
+        # Payment gateway trust pages carry the merchant's certificate number and domain.
+        pattern=re.compile(r"bitpay\.ir/certificate-([\w.-]+)", re.IGNORECASE),
+        validator=_is_real_query_value,
+        group=1,
+    ),
+    ContentRule(
         rule_id="sms-api-key",
         message="SMS panel API keys belong in .env (SMS_API_KEY).",
         pattern=re.compile(r"api\.kavenegar\.com/v\d+/([A-Za-z0-9%+=-]{16,})", re.IGNORECASE),
@@ -405,8 +433,9 @@ CONTENT_RULES: tuple[ContentRule, ...] = (
         rule_id="hardcoded-secret",
         message="Credential assigned a literal value; load it from the environment (.env) instead.",
         pattern=re.compile(
-            # The lookbehind skips names that are part of a file path, e.g. "nginx/.htpasswd".
-            r"(?<![./\\-])\b\w*(?:password|passwd|pwd|secret|api[_-]?key|apikey|access[_-]?key|auth[_-]?key|token)\w*"
+            # The lookbehinds skip names that are part of a file path, e.g. "nginx/.htpasswd",
+            # while attribute assignments such as "self.password = ..." are still checked.
+            r"(?<![/\\-])(?<![/\\]\.)\b\w*(?:password|passwd|pwd|secret|api[_-]?key|apikey|access[_-]?key|auth[_-]?key|token)\w*"
             r"[\"']?\s*(?:=|:|=>)\s*[rbuf]?[\"']([^\"'\s]{4,})[\"']",
             re.IGNORECASE,
         ),
