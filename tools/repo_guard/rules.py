@@ -25,6 +25,10 @@ from . import validators
 # decides whether the match is a real finding.
 Validator = Callable[[re.Match, str], bool]
 
+# Value written in place of sensitive data by ``redact.py``. Matches whose
+# sensitive part already holds this placeholder are never reported again.
+REDACTION_PLACEHOLDER = "__REDACTED__"
+
 
 @dataclass(frozen=True)
 class PathRule:
@@ -73,6 +77,8 @@ class ContentRule:
     def find(self, text: str) -> re.Match[str] | None:
         """Return the first confirmed match in ``text``, if any."""
         for match in self.pattern.finditer(text):
+            if REDACTION_PLACEHOLDER in match.group(self.group):
+                continue
             if self.validator is None or self.validator(match, text):
                 return match
         return None
@@ -201,6 +207,10 @@ def _is_merchant_id(match: re.Match[str], line: str) -> bool:
     return bool(_PAYMENT_CONTEXT.search(line)) and len(set(validators.digits_only(match.group(0)))) > 1
 
 
+def _is_real_query_value(match: re.Match[str], _line: str) -> bool:
+    return not validators.is_placeholder(match.group(1))
+
+
 def _is_real_secret_value(match: re.Match[str], _line: str) -> bool:
     """Accept a captured value unless it is a label, URL, path or placeholder."""
     value = match.group(1)
@@ -255,6 +265,8 @@ _CONFIG_FILE_PATTERNS = (
 # ---------------------------------------------------------------------------
 # Content rules
 # ---------------------------------------------------------------------------
+
+_TRUST_SEAL_MESSAGE = "eNamad / Samandehi seal IDs and codes belong in .env and must be rendered from settings."
 
 CONTENT_RULES: tuple[ContentRule, ...] = (
     ContentRule(
@@ -312,18 +324,24 @@ CONTENT_RULES: tuple[ContentRule, ...] = (
     ),
     ContentRule(
         rule_id="trust-seal",
-        message="eNamad / Samandehi seal IDs and codes belong in .env and must be rendered from settings.",
-        pattern=re.compile(
-            r"(?:enamad|samandehi)\.ir\S*?[?&](?:id|code|p)=\w+"
-            r"|[\"']enamad[\"'][^>]*?content\s*=\s*[\"']\w+"
-            r"|content\s*=\s*[\"']\w+[\"'][^>]*?[\"']enamad[\"']",
-            re.IGNORECASE,
-        ),
+        message=_TRUST_SEAL_MESSAGE,
+        # The whole query string is the sensitive part: it carries both the ID and the code.
+        pattern=re.compile(r"(?:enamad|samandehi)\.ir[^\s'\"?]*\?([^\s'\"<>]*=[^\s'\"<>]+)", re.IGNORECASE),
+        validator=_is_real_query_value,
+        group=1,
+    ),
+    ContentRule(
+        rule_id="trust-seal",
+        message=_TRUST_SEAL_MESSAGE,
+        # Domain verification tag, e.g. <meta name="enamad" content="...">, in any attribute order.
+        pattern=re.compile(r"<meta\b(?=[^>]*[\"']enamad[\"'])[^>]*?content\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE),
+        validator=_is_real_query_value,
+        group=1,
     ),
     ContentRule(
         rule_id="sms-api-key",
         message="SMS panel API keys belong in .env (SMS_API_KEY).",
-        pattern=re.compile(r"api\.kavenegar\.com/v\d+/([A-Za-z0-9+/=-]{16,})", re.IGNORECASE),
+        pattern=re.compile(r"api\.kavenegar\.com/v\d+/([A-Za-z0-9%+=-]{16,})", re.IGNORECASE),
         group=1,
     ),
     ContentRule(

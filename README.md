@@ -82,6 +82,24 @@ git-ignored and is read only on your machine:
 Numbers match regardless of spacing, dashes, Persian digits or a `+98` prefix;
 text matches case-insensitively.
 
+### Importing existing code
+
+To publish code that was written before the guard existed, copy it into a
+clone of this repository and run:
+
+```bash
+python -m tools.repo_guard prepare
+```
+
+The command shows a plan and applies it only after confirmation:
+
+- sensitive values are replaced with `__REDACTED__` in place, and the original
+  values are saved to `.redactions.local` (git-ignored) for moving into `.env`;
+- files that must not be published, and data files such as fixtures or CSV
+  exports, are held back for manual review;
+- virtual environments that `.gitignore` does not cover are excluded;
+- everything else is staged, ready for `git commit` and `git push`.
+
 ### Useful commands
 
 ```bash

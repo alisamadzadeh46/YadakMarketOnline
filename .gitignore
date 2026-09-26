@@ -8,8 +8,8 @@
 *.env
 !.env.example
 
-# Project specific restricted terms used by tools/repo_guard
-.repo-guard.local
+# Machine specific files: restricted terms and redacted values of tools/repo_guard
+*.local
 
 # Machine or server specific settings
 local_settings.py

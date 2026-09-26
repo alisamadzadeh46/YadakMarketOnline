@@ -30,9 +30,9 @@ class GitError(RuntimeError):
     """Raised when a git command fails."""
 
 
-def run_git(*args: str, cwd: Path | None = None) -> str:
+def run_git(*args: str, cwd: Path | None = None, stdin: bytes | None = None) -> str:
     """Run git and return its standard output decoded as UTF-8."""
-    result = subprocess.run([*_GIT, *args], cwd=cwd, capture_output=True, check=False)
+    result = subprocess.run([*_GIT, *args], cwd=cwd, input=stdin, capture_output=True, check=False)
     if result.returncode != 0:
         message = result.stderr.decode("utf-8", errors="replace").strip()
         raise GitError(message or f"git {' '.join(args)} failed")
@@ -112,6 +112,29 @@ def commit_identities(revision: str) -> dict[str, str]:
 def working_tree_files() -> list[str]:
     """Tracked files plus untracked files that are not ignored."""
     return _split_null(run_git("ls-files", "-z", "--cached", "--others", "--exclude-standard"))
+
+
+def pending_files() -> list[str]:
+    """Untracked (not ignored) and modified tracked files that still exist."""
+    listed = _split_null(run_git("ls-files", "-z", "--others", "--modified", "--exclude-standard"))
+    return [path for path in dict.fromkeys(listed) if Path(path).is_file()]
+
+
+def is_ignored(path: str) -> bool:
+    result = subprocess.run([*_GIT, "check-ignore", "-q", "--", path], capture_output=True, check=False)
+    return result.returncode == 0
+
+
+def add_paths(paths: Sequence[str]) -> None:
+    """Stage ``paths`` without hitting command line length limits."""
+    if paths:
+        pathspec = "\0".join(paths).encode("utf-8")
+        run_git("add", "--pathspec-from-file=-", "--pathspec-file-nul", "--", stdin=pathspec)
+
+
+def exclude_file() -> Path:
+    """The clone specific ignore file (never committed)."""
+    return Path(run_git("rev-parse", "--git-path", "info/exclude").strip())
 
 
 def set_hooks_path(path: str) -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import dataclass
 from fnmatch import fnmatchcase
 from pathlib import PurePosixPath
 
@@ -22,6 +23,15 @@ _UNSCANNED_DIRECTORIES = frozenset({"node_modules", "vendor", "vendors"})
 
 # Everything below this line of a commit message template is discarded by git.
 _SCISSORS_LINE = "# ------------------------ >8 ------------------------"
+
+
+@dataclass(frozen=True)
+class Hit:
+    """Position of a sensitive value inside a single line."""
+
+    rule_id: str
+    start: int
+    end: int
 
 
 def is_content_scanned(path: str) -> bool:
@@ -56,23 +66,33 @@ class Scanner:
             findings.append(Finding(path, 0, RESTRICTED_TERM_RULE_ID, make_excerpt(path, *span)))
         return findings
 
+    def find_hits(self, path: str, text: str) -> list[Hit]:
+        """Locate sensitive values in one line of ``path``.
+
+        Offsets refer to ``text`` itself: normalisation never changes length.
+        """
+        if ALLOW_MARKER in text:
+            return []
+        normalized = normalize(text)
+        hits = []
+        for rule in self.content_rules:
+            if not rule.applies_to(path):
+                continue
+            match = rule.find(normalized)
+            if match:
+                hits.append(Hit(rule.rule_id, *match.span(rule.group)))
+        span = self.terms.search(normalized)
+        if span:
+            hits.append(Hit(RESTRICTED_TERM_RULE_ID, *span))
+        return hits
+
     def check_line(self, line: Line) -> list[Finding]:
         """Check a single line of content."""
-        if ALLOW_MARKER in line.text:
-            return []
         text = normalize(line.text)
-        findings = []
-        for rule in self.content_rules:
-            if not rule.applies_to(line.path):
-                continue
-            match = rule.find(text)
-            if match:
-                excerpt = make_excerpt(text, *match.span(rule.group))
-                findings.append(Finding(line.path, line.number, rule.rule_id, excerpt))
-        span = self.terms.search(text)
-        if span:
-            findings.append(Finding(line.path, line.number, RESTRICTED_TERM_RULE_ID, make_excerpt(text, *span)))
-        return findings
+        return [
+            Finding(line.path, line.number, hit.rule_id, make_excerpt(text, hit.start, hit.end))
+            for hit in self.find_hits(line.path, line.text)
+        ]
 
     def check_lines(self, lines: Iterable[Line]) -> list[Finding]:
         """Check many lines, skipping files whose content is not scanned."""

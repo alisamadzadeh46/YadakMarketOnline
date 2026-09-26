@@ -11,6 +11,8 @@ from pathlib import Path
 from unittest import mock
 
 from tools.repo_guard.cli import EXIT_FINDINGS, EXIT_OK, main
+from tools.repo_guard.importer import REDACTIONS_FILE
+from tools.repo_guard.rules import REDACTION_PLACEHOLDER
 
 SAMPLE_PHONE = "09351847264"  # repo-guard: allow
 ZERO_SHA = "0" * 40
@@ -45,10 +47,13 @@ class CliIntegrationTests(unittest.TestCase):
         self.git("add", relative_path)
 
     def run_cli(self, *args, stdin=""):
-        errors = io.StringIO()
-        with redirect_stderr(errors), redirect_stdout(io.StringIO()), mock.patch("sys.stdin", io.StringIO(stdin)):
+        output = io.StringIO()
+        with redirect_stderr(output), redirect_stdout(output), mock.patch("sys.stdin", io.StringIO(stdin)):
             exit_code = main(list(args))
-        return exit_code, errors.getvalue()
+        return exit_code, output.getvalue()
+
+    def staged(self):
+        return set(self.git("diff", "--cached", "--name-only").splitlines())
 
     def test_clean_changes_pass(self):
         self.stage("shop/views.py", "def index(request):\n    return None\n")
@@ -102,6 +107,31 @@ class CliIntegrationTests(unittest.TestCase):
     def test_branch_deletion_is_ignored(self):
         stdin = f"(delete) {ZERO_SHA} refs/heads/old {ZERO_SHA}\n"
         self.assertEqual(self.run_cli("pre-push", "origin", "url", stdin=stdin)[0], EXIT_OK)
+
+    def test_prepare_redacts_holds_back_and_stages(self):
+        self.write(".gitignore", "*.local\n")
+        self.write("shop/settings.py", f'SUPPORT_PHONE = "{SAMPLE_PHONE}"\nDEBUG = False\n')
+        self.write("shop/views.py", "def index(request):\n    return None\n")
+        self.write("shop/fixtures/sellers.json", "[]\n")
+        self.write("venv2/pyvenv.cfg", "home = /usr\n")
+        self.write("venv2/lib/site.py", "x = 1\n")
+
+        exit_code, output = self.run_cli("prepare", "--yes")
+
+        self.assertEqual(exit_code, EXIT_OK, output)
+        self.assertEqual(self.staged(), {".gitignore", "shop/settings.py", "shop/views.py"})
+        settings = (self.root / "shop/settings.py").read_text(encoding="utf-8")
+        self.assertIn(f'SUPPORT_PHONE = "{REDACTION_PLACEHOLDER}"', settings)
+        self.assertIn(SAMPLE_PHONE, (self.root / REDACTIONS_FILE).read_text(encoding="utf-8"))
+        self.assertIn("shop/fixtures/sellers.json", output)
+        self.assertIn("/venv2/", (self.root / ".git/info/exclude").read_text(encoding="utf-8"))
+
+    def test_prepare_changes_nothing_without_confirmation(self):
+        self.write("shop/settings.py", f'SUPPORT_PHONE = "{SAMPLE_PHONE}"\n')
+        exit_code, _ = self.run_cli("prepare", stdin="n\n")
+        self.assertEqual(exit_code, EXIT_OK)
+        self.assertEqual(self.staged(), set())
+        self.assertIn(SAMPLE_PHONE, (self.root / "shop/settings.py").read_text(encoding="utf-8"))
 
     def test_working_tree_audit_includes_untracked_files(self):
         self.write("notes/servers.txt", "HOST = 93.184.216.34\n")  # repo-guard: allow

@@ -10,7 +10,7 @@ import sys
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
-from . import gitio
+from . import gitio, importer
 from .models import Finding
 from .rules import RULE_MESSAGES
 from .scanner import ALLOW_MARKER, Scanner, is_content_scanned
@@ -188,6 +188,68 @@ def _command_install_hooks(scanner: Scanner, args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _command_prepare(scanner: Scanner, args: argparse.Namespace) -> int:
+    root: Path = args.root
+    # Fail early, before any file is changed, if git has no identity to commit with.
+    gitio.current_identities()
+    gitio.set_hooks_path(HOOKS_DIRECTORY)
+
+    plan = importer.build_plan(scanner, root)
+    if not plan.to_stage and not plan.held_back:
+        print("repo-guard: there are no new files to prepare.")
+        return EXIT_OK
+    _print_plan(plan)
+    if not args.yes and not _confirm("Apply these changes? [y/N] "):
+        print("Nothing was changed.")
+        return EXIT_OK
+
+    importer.apply_plan(plan, root)
+    exit_code = _command_staged(scanner, args)
+    if exit_code == EXIT_OK:
+        print(f"\nDone: {len(plan.to_stage)} file(s) are staged. Publish them with:\n")
+        print('    git commit -m "Add project source code"')
+        print("    git push\n")
+    return exit_code
+
+
+def _print_plan(plan: importer.ImportPlan) -> None:
+    print("\nPublication plan\n")
+    print(f"  Files to publish: {len(plan.to_stage)}")
+
+    if plan.rewrites:
+        print(
+            f"  Sensitive values to replace with __REDACTED__: {len(plan.redactions)} in {len(plan.rewrites)} file(s)"
+        )
+        for path in plan.rewrites:
+            counts: dict[str, int] = {}
+            for item in plan.redactions:
+                if item.path == path:
+                    counts[item.rule_id] = counts.get(item.rule_id, 0) + 1
+            summary = ", ".join(f"{rule_id} x{count}" for rule_id, count in sorted(counts.items()))
+            print(f"      {path}  ({summary})")
+
+    if plan.held_back:
+        print(f"  Files held back (not published): {len(plan.held_back)}")
+        for path, reason in plan.held_back.items():
+            print(f"      {path}  - {reason}")
+
+    if plan.virtualenvs:
+        print(f"  Virtual environments ignored: {', '.join(plan.virtualenvs)}")
+
+    if plan.redactions:
+        print(
+            f"\nThe original values are saved to {importer.REDACTIONS_FILE} (git-ignored) so they can be moved to .env."
+        )
+    print()
+
+
+def _confirm(question: str) -> bool:
+    try:
+        return input(question).strip().lower() in {"y", "yes"}
+    except EOFError:
+        return False
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m tools.repo_guard",
@@ -217,6 +279,13 @@ def _build_parser() -> argparse.ArgumentParser:
     commands.add_parser("install-hooks", help="enable the git hooks for this clone").set_defaults(
         handler=_command_install_hooks
     )
+
+    prepare = commands.add_parser(
+        "prepare",
+        help="redact sensitive values in new files and stage everything that is safe to publish",
+    )
+    prepare.add_argument("--yes", action="store_true", help="apply the plan without asking for confirmation")
+    prepare.set_defaults(handler=_command_prepare)
     return parser
 
 
@@ -229,6 +298,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
         args.root = gitio.repository_root()
+        # git prints paths relative to the working directory; use the root.
+        os.chdir(args.root)
         scanner = Scanner(TermMatcher.for_repository(args.root))
         return args.handler(scanner, args)
     except gitio.GitError as error:

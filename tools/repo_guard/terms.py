@@ -135,8 +135,17 @@ class TermMatcher:
             for size in range(1, len(window) + 1):
                 phrase = " ".join(word for word, _, _ in window[:size])
                 if phrase_digest(phrase) in self._digests:
-                    return window[0][1], window[size - 1][2]
+                    return _widen_to_words(text, window[0][1], window[size - 1][2])
         return None
+
+
+def _widen_to_words(text: str, start: int, end: int) -> tuple[int, int]:
+    """Extend a span to whole words, e.g. from the "Case" part to all of "camelCase"."""
+    while start > 0 and _WORD.match(text[start - 1]):
+        start -= 1
+    while end < len(text) and _WORD.match(text[end]):
+        end += 1
+    return start, end
 
 
 def load_local_terms(path: Path) -> list[str]:
