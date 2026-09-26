@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>یدک‌مارت | پخش عمده لوازم یدکی خودرو</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --purple:#5B2E9E; --purple-2:#7B45C9; --purple-deep:#3A1C6E; --purple-ink:#2A1552;
+  --purple-soft:#F1EAFB; --purple-line:#E4D8F6;
+  --orange:#F26A1B; --orange-2:#FF8A3D; --orange-soft:#FDECE0;
+  --ink:#211A33; --ink-soft:#4A4360; --muted:#8B85A0; --line:#EBE6F4;
+  --paper:#F5F1FB; --card:#FFFFFF; --green:#1F9D63; --red:#E24545; --amber:#F2A81B;
+  --shadow-sm:0 4px 14px -8px rgba(58,28,110,.35);
+  --shadow-md:0 18px 40px -22px rgba(58,28,110,.45);
+  --shadow-lg:0 30px 60px -28px rgba(58,28,110,.5);
+  --r-lg:26px; --r-md:18px; --r-sm:12px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Vazirmatn',system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 500px at 90% -5%, #EEE3FB 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, #FBE7DA 0%, transparent 55%),
+    var(--paper);
+  color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh;
+}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+input,select{font-family:inherit;}
+::selection{background:var(--purple);color:#fff;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;border-radius:var(--r-sm);transition:.18s;white-space:nowrap;}
+.btn-orange{background:linear-gradient(135deg,var(--orange),var(--orange-2));color:#fff;box-shadow:0 12px 26px -12px rgba(242,106,27,.8);}
+.btn-orange:hover{transform:translateY(-2px);box-shadow:0 16px 30px -12px rgba(242,106,27,.9);}
+.btn-purple{background:linear-gradient(135deg,var(--purple),var(--purple-2));color:#fff;box-shadow:0 12px 26px -14px rgba(91,46,158,.9);}
+.btn-purple:hover{transform:translateY(-2px);}
+.btn-ghost{background:#fff;color:var(--purple);border:1.5px solid var(--purple-line);}
+.btn-ghost:hover{border-color:var(--purple);background:var(--purple-soft);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+.view{animation:fadeUp .45s cubic-bezier(.2,.7,.3,1);}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:#d6cdea;border-radius:8px;}
+
+/* announcement */
+.announce{background:linear-gradient(90deg,var(--purple-deep),var(--purple));color:#fff;font-size:13px;}
+.announce .wrap{display:flex;justify-content:center;align-items:center;gap:10px;padding:9px 20px;text-align:center;}
+.announce b{color:var(--orange-2);}
+
+/* header */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+.hdr{display:flex;align-items:center;gap:18px;padding:14px 20px;}
+.logo{display:flex;align-items:center;gap:11px;cursor:pointer;flex-shrink:0;}
+.logo .mk{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--purple),var(--purple-2));display:grid;place-items:center;box-shadow:0 10px 22px -8px var(--purple);}
+.logo .nm{font-weight:800;font-size:20px;letter-spacing:-.3px;line-height:1.1;}
+.logo .sb{font-size:10px;color:var(--muted);letter-spacing:2px;}
+.search{flex:1;max-width:560px;display:flex;align-items:center;gap:10px;background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:0 14px;height:48px;transition:.18s;}
+.search:focus-within{border-color:var(--purple-2);box-shadow:0 0 0 4px var(--purple-soft);}
+.search input{border:none;background:none;outline:none;flex:1;font-size:14px;color:var(--ink);}
+.hactions{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.icon-btn{position:relative;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:var(--purple-soft);color:var(--purple);border:1px solid var(--purple-line);transition:.18s;}
+.icon-btn:hover{background:var(--purple);color:#fff;}
+.cbadge{position:absolute;top:-6px;left:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--orange);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;}
+
+/* nav */
+.navrow{border-top:1px solid var(--line);}
+.nav{display:flex;align-items:center;gap:8px;height:54px;padding:0 20px;}
+.catbtn{display:flex;align-items:center;gap:9px;height:40px;padding:0 18px;border-radius:12px;color:#fff;font-weight:700;font-size:14px;background:linear-gradient(135deg,var(--purple),var(--purple-2));box-shadow:0 10px 22px -12px var(--purple);}
+.nav nav{display:flex;gap:2px;flex-wrap:wrap;}
+.nav nav a{padding:9px 14px;border-radius:10px;font-weight:600;font-size:14.5px;color:var(--ink-soft);cursor:pointer;transition:.15s;}
+.nav nav a:hover,.nav nav a.on{background:var(--purple-soft);color:var(--purple);}
+.nav .ship{margin-right:auto;display:flex;align-items:center;gap:7px;color:var(--green);font-size:12.5px;font-weight:700;}
+
+main{padding:26px 0 0;}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.35fr .85fr;gap:18px;}
+.hero-main{position:relative;overflow:hidden;border-radius:var(--r-lg);background:
+    radial-gradient(600px 300px at 85% 20%, rgba(255,138,61,.28), transparent 60%),
+    linear-gradient(130deg,var(--purple-deep) 0%,var(--purple) 55%,var(--purple-2) 100%);
+  color:#fff;padding:44px;min-height:380px;display:flex;flex-direction:column;justify-content:center;}
+.hero-main::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 10px,transparent 10px 20px);opacity:.6;}
+.hero-main .in{position:relative;z-index:2;max-width:520px;}
+.chip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,138,61,.18);border:1px solid rgba(255,138,61,.4);color:var(--orange-2);font-size:12.5px;font-weight:700;padding:7px 13px;border-radius:99px;}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:var(--orange-2);}
+.hero-main h1{font-size:clamp(28px,4vw,46px);font-weight:800;line-height:1.18;margin:18px 0 14px;letter-spacing:-.5px;}
+.hero-main h1 span{color:var(--orange-2);}
+.hero-main p{color:#E4DAF6;font-size:15.5px;line-height:2;max-width:460px;margin:0 0 28px;}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;}
+.hero-parts{position:absolute;left:-30px;bottom:-30px;z-index:1;opacity:.9;filter:drop-shadow(0 20px 30px rgba(0,0,0,.4));}
+.dots{display:flex;gap:7px;margin-top:26px;position:relative;z-index:2;}
+.dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35);transition:.2s;cursor:pointer;}
+.dots i.on{width:26px;border-radius:6px;background:var(--orange-2);}
+.hero-side{display:flex;flex-direction:column;gap:18px;}
+.promo{flex:1;border-radius:var(--r-lg);padding:26px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;color:#fff;
+  background:radial-gradient(400px 200px at 90% 10%,rgba(255,255,255,.18),transparent),linear-gradient(135deg,var(--orange),var(--orange-2));}
+.promo::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.12) 0 8px,transparent 8px 16px);opacity:.5;}
+.promo .t{font-size:13px;font-weight:700;opacity:.85;position:relative;}
+.promo .b{font-size:25px;font-weight:800;margin-top:6px;line-height:1.3;position:relative;}
+.promo button{position:relative;align-self:flex-start;background:#fff;color:var(--orange);border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:800;}
+.stats{border-radius:var(--r-lg);background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-sm);padding:22px;display:flex;gap:8px;}
+.stats .s{text-align:center;flex:1;}
+.stats .s .v{font-size:24px;font-weight:800;color:var(--purple);}
+.stats .s .k{font-size:12px;color:var(--muted);margin-top:4px;}
+.stats .sep{width:1px;background:var(--line);}
+
+section{margin-top:42px;}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.sec-head h2{font-size:23px;font-weight:800;margin:0;display:flex;align-items:center;gap:11px;}
+.sec-head h2 .bar{width:6px;height:24px;border-radius:4px;background:linear-gradient(var(--purple),var(--orange));}
+.sec-head a{font-size:13.5px;font-weight:700;color:var(--purple);cursor:pointer;display:inline-flex;gap:5px;align-items:center;}
+
+/* features */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:18px;}
+.feature{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-sm);transition:.18s;}
+.feature:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);}
+.feature .ic{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--purple-soft),#fff);border:1px solid var(--purple-line);color:var(--purple);display:grid;place-items:center;flex-shrink:0;}
+.feature .tt{font-weight:700;font-size:14.5px;}
+.feature .ss{font-size:12.5px;color:var(--muted);margin-top:3px;}
+
+/* categories */
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;}
+.cat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:22px 16px;text-align:center;cursor:pointer;transition:.18s;box-shadow:var(--shadow-sm);}
+.cat:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--purple-line);}
+.cat .ic{width:58px;height:58px;margin:0 auto 12px;border-radius:16px;display:grid;place-items:center;}
+.cat .nm{font-weight:700;font-size:14.5px;}
+.cat .ct{font-size:11.5px;color:var(--muted);margin-top:4px;}
+
+/* product card */
+.grid{display:grid;gap:16px;}
+.grid.home{grid-template-columns:repeat(auto-fill,minmax(224px,1fr));}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);transition:.18s;}
+.card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
+.card .thumb{position:relative;height:158px;display:grid;place-items:center;cursor:pointer;background:linear-gradient(135deg,#fff,var(--purple-soft));border-bottom:1px solid var(--line);}
+.card .thumb svg{opacity:.85;}
+.tag{position:absolute;top:10px;right:10px;background:var(--orange);color:#fff;font-size:12px;font-weight:800;padding:4px 9px;border-radius:9px;}
+.fav{position:absolute;top:10px;left:10px;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.9);display:grid;place-items:center;color:var(--muted);border:1px solid var(--line);}
+.fav:hover{color:var(--red);}
+.card .body{padding:14px;display:flex;flex-direction:column;flex:1;}
+.card .brand{font-size:11px;color:var(--purple);font-weight:700;letter-spacing:.5px;}
+.card .name{font-weight:600;font-size:14px;line-height:1.6;margin:5px 0;cursor:pointer;min-height:44px;}
+.card .name:hover{color:var(--purple);}
+.card .sku{font-size:10.5px;color:var(--muted);}
+.card .rate{display:flex;align-items:center;gap:5px;margin:9px 0;}
+.card .rate .n{font-size:12.5px;font-weight:700;}
+.card .rate .s{font-size:11.5px;color:var(--muted);}
+.card .price{display:flex;align-items:baseline;gap:8px;}
+.card .price .now{font-size:18px;font-weight:800;color:var(--purple-ink);}
+.card .price .u{font-size:11px;color:var(--muted);}
+.card .price .old{font-size:12px;color:var(--muted);text-decoration:line-through;margin-right:auto;}
+.card .moq{font-size:11.5px;color:var(--muted);margin-top:5px;}
+.card .add{width:100%;margin-top:11px;height:42px;border-radius:12px;background:var(--purple-soft);color:var(--purple);border:1px solid var(--purple-line);font-size:13.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;transition:.15s;}
+.card .add:hover{background:linear-gradient(135deg,var(--orange),var(--orange-2));color:#fff;border-color:transparent;}
+
+/* wholesale banner */
+.wholesale{margin-top:42px;border-radius:var(--r-lg);overflow:hidden;position:relative;color:#fff;padding:40px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  background:radial-gradient(500px 300px at 90% 120%,rgba(255,138,61,.3),transparent),linear-gradient(120deg,var(--purple-deep),var(--purple-2));}
+.wholesale::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 10px,transparent 10px 20px);}
+.wholesale .in{position:relative;max-width:580px;}
+.wholesale h2{font-size:27px;font-weight:800;margin:0 0 10px;}
+.wholesale p{opacity:.9;font-size:15px;line-height:1.9;margin:0;}
+.wholesale .btn{position:relative;}
+
+/* brands */
+.brands{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
+.brands .bl{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 28px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;letter-spacing:1px;color:var(--ink-soft);box-shadow:var(--shadow-sm);}
+
+/* blog */
+.blog{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;}
+.post{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:.18s;}
+.post:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);}
+.post .im{height:160px;display:grid;place-items:center;color:#fff;font-weight:700;}
+.post .bd{padding:16px;}
+.post .meta{display:flex;gap:8px;align-items:center;font-size:11.5px;color:var(--muted);}
+.post .meta .c{color:var(--purple);font-weight:700;}
+.post .tt{font-weight:700;font-size:15.5px;line-height:1.6;margin:9px 0 8px;}
+.post .ex{font-size:13px;color:var(--muted);line-height:1.8;}
+
+/* shop layout */
+.crumb{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-bottom:16px;}
+.crumb a{cursor:pointer;}
+.crumb .cur{color:var(--ink);font-weight:600;}
+.shop{display:grid;grid-template-columns:280px 1fr;gap:22px;align-items:start;}
+.filters{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:22px;position:sticky;top:150px;box-shadow:var(--shadow-sm);}
+.filters h3{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;margin:0 0 18px;}
+.fgroup{margin-bottom:22px;}
+.flabel{font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:11px;}
+.fcat{display:flex;flex-direction:column;gap:4px;}
+.fcat button{text-align:right;border-radius:10px;padding:9px 12px;font-size:13.5px;font-weight:600;color:var(--ink-soft);display:flex;justify-content:space-between;align-items:center;transition:.15s;}
+.fcat button:hover{background:var(--purple-soft);}
+.fcat button.on{background:linear-gradient(135deg,var(--purple),var(--purple-2));color:#fff;}
+.fchips{display:flex;flex-wrap:wrap;gap:7px;}
+.fchips button{border:1.5px solid var(--line);border-radius:9px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;transition:.15s;}
+.fchips button:hover{border-color:var(--purple-2);}
+.fchips button.on{background:var(--purple);color:#fff;border-color:var(--purple);}
+.range{width:100%;accent-color:var(--orange);}
+.rangeval{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:6px;}
+.promo-card{margin-top:6px;padding:18px;border-radius:14px;color:#fff;background:linear-gradient(135deg,var(--purple-deep),var(--purple-2));}
+.promo-card .h{color:var(--orange-2);font-weight:800;font-size:14px;}
+.promo-card .p{font-size:12px;color:#D9CEF0;margin-top:6px;line-height:1.8;}
+.shopbar{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:16px;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow-sm);}
+.shopbar select{border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--ink);outline:none;}
+.grid.shopgrid{grid-template-columns:repeat(auto-fill,minmax(212px,1fr));}
+
+/* product detail */
+.pd{display:grid;grid-template-columns:1fr 1fr;gap:28px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:26px;box-shadow:var(--shadow-md);}
+.pd .gal{height:380px;border-radius:var(--r-md);display:grid;place-items:center;position:relative;background:linear-gradient(135deg,#fff,var(--purple-soft));border:1px solid var(--line);}
+.pd .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px;}
+.pd .thumbs div{height:74px;border-radius:12px;background:linear-gradient(135deg,#fff,var(--purple-soft));border:1px solid var(--line);cursor:pointer;}
+.pd .thumbs div.on{border-color:var(--purple);box-shadow:0 0 0 2px var(--purple-soft);}
+.pd .brandtag{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--purple);font-weight:700;background:var(--purple-soft);padding:6px 12px;border-radius:9px;}
+.pd h1{font-size:26px;font-weight:800;line-height:1.4;margin:14px 0 8px;}
+.pd .kv{display:flex;gap:26px;margin:18px 0;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+.pd .kv .k{font-size:12px;color:var(--muted);}
+.pd .kv .v{font-weight:700;font-size:14px;margin-top:4px;}
+.pd .buybox{background:var(--paper);border-radius:16px;padding:20px;}
+.pd .qty{display:flex;align-items:center;background:var(--card);border:1.5px solid var(--line);border-radius:12px;overflow:hidden;}
+.pd .qty button{width:44px;height:48px;font-size:20px;color:var(--purple);}
+.pd .qty span{width:56px;text-align:center;font-weight:700;font-size:16px;}
+.pd .trust{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.pd .trust div{flex:1;min-width:130px;display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px;font-size:12.5px;font-weight:600;}
+.tabs{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:8px;margin-top:20px;box-shadow:var(--shadow-sm);}
+.tabs .tabhead{display:flex;gap:4px;border-bottom:1px solid var(--line);padding:0 8px;}
+.tabs .tabhead button{padding:14px 18px;font-size:14px;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;}
+.tabs .tabhead button.on{color:var(--purple);border-color:var(--orange);}
+.tabs .tabbody{padding:22px;font-size:14.5px;line-height:2.1;color:var(--ink-soft);}
+.specrow{display:flex;justify-content:space-between;padding:12px 14px;background:var(--paper);border-radius:10px;margin-bottom:8px;}
+.specrow .k{color:var(--muted);font-size:13px;}
+.specrow .v{font-weight:600;}
+
+/* cart drawer */
+.overlay{position:fixed;inset:0;background:rgba(42,21,82,.4);backdrop-filter:blur(2px);z-index:80;opacity:0;pointer-events:none;transition:.25s;}
+.overlay.open{opacity:1;pointer-events:auto;}
+.drawer{position:fixed;top:0;left:0;height:100%;width:400px;max-width:92vw;background:var(--card);z-index:90;transform:translateX(-100%);transition:.3s cubic-bezier(.2,.7,.3,1);display:flex;flex-direction:column;box-shadow:20px 0 60px -20px rgba(0,0,0,.4);}
+.drawer.open{transform:none;}
+.drawer .dh{display:flex;align-items:center;justify-content:space-between;padding:20px;border-bottom:1px solid var(--line);}
+.drawer .dh h3{margin:0;font-size:18px;font-weight:800;}
+.drawer .dbody{flex:1;overflow:auto;padding:16px 20px;}
+.drawer .empty{text-align:center;color:var(--muted);padding:60px 20px;}
+.citem{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);}
+.citem .im{width:60px;height:60px;border-radius:12px;background:linear-gradient(135deg,#fff,var(--purple-soft));border:1px solid var(--line);display:grid;place-items:center;flex-shrink:0;}
+.citem .nm{font-size:13.5px;font-weight:600;line-height:1.5;}
+.citem .mono{font-size:13px;font-weight:800;color:var(--purple-ink);margin-top:4px;}
+.citem .qc{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.citem .qc button{width:26px;height:26px;border-radius:8px;background:var(--purple-soft);color:var(--purple);font-size:15px;display:grid;place-items:center;}
+.citem .rm{margin-right:auto;color:var(--muted);font-size:12px;align-self:flex-start;}
+.drawer .dfoot{padding:20px;border-top:1px solid var(--line);}
+.drawer .drow{display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;}
+.drawer .drow.tot{font-size:17px;font-weight:800;}
+
+/* footer */
+footer{margin-top:60px;background:linear-gradient(160deg,var(--purple-ink),var(--purple-deep));color:#EAE3F7;}
+footer .ftop{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.3fr;gap:34px;padding:50px 20px 34px;}
+footer h4{font-size:15px;font-weight:800;color:#fff;margin:0 0 16px;}
+footer ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;}
+footer ul a{font-size:13.5px;color:#C9BEE3;cursor:pointer;}
+footer ul a:hover{color:var(--orange-2);}
+footer .about p{font-size:13.5px;line-height:2;color:#C9BEE3;}
+footer .social{display:flex;gap:10px;margin-top:16px;}
+footer .social a{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.08);display:grid;place-items:center;color:#fff;}
+footer .social a:hover{background:var(--orange);}
+footer .fbot{border-top:1px solid rgba(255,255,255,.12);padding:18px 20px;text-align:center;font-size:12.5px;color:#B3A7CE;}
+
+.newsletter{display:flex;gap:8px;margin-top:14px;}
+.newsletter input{flex:1;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);padding:0 14px;color:#fff;outline:none;font-size:13px;}
+.newsletter input::placeholder{color:#9C90BD;}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:14px 20px;border-radius:14px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg);z-index:200;display:flex;align-items:center;gap:10px;transform:translateY(120px);opacity:0;transition:.3s;}
+.toast.show{transform:none;opacity:1;}
+
+/* responsive */
+@media(max-width:960px){
+  .hero{grid-template-columns:1fr;}
+  .shop{grid-template-columns:1fr;}
+  .filters{position:static;}
+  .pd{grid-template-columns:1fr;}
+  footer .ftop{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:640px){
+  .search{display:none;}
+  .nav nav{display:none;}
+  .stats{flex-wrap:wrap;}
+  footer .ftop{grid-template-columns:1fr;}
+  .hero-main{padding:30px;}
+}
+</style>
+</head>
+<body>
+
+<!-- announcement -->
+<div class="announce">
+  <div class="wrap"><span>🚚 <b>ارسال رایگان</b> برای سفارش‌های عمده بالای ۱۵ میلیون تومان — قیمت ویژه همکاران و فروشگاه‌ها</span></div>
+</div>
+
+<!-- header -->
+<header>
+  <div class="wrap hdr">
+    <div class="logo" onclick="go('home')">
+      <div class="mk"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg></div>
+      <div><div class="nm">یدک‌مارت</div><div class="sb mono">AUTO PARTS · B2B</div></div>
+    </div>
+    <div class="search">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="q" placeholder="جستجوی قطعه، برند یا شماره فنی..." oninput="onSearch(this.value)">
+      <span class="mono" style="font-size:11px;color:var(--muted);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 7px;">OEM</span>
+    </div>
+    <div class="hactions">
+      <button class="btn btn-orange" style="height:48px;padding:0 18px;font-size:14px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>ورود / ثبت‌نام</span>
+      </button>
+      <button class="icon-btn" onclick="openCart()">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+        <span class="cbadge" id="cbadge" style="display:none">0</span>
+      </button>
+    </div>
+  </div>
+  <div class="navrow">
+    <div class="wrap nav">
+      <button class="catbtn" onclick="go('shop')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        دسته‌بندی محصولات
+      </button>
+      <nav id="topnav">
+        <a class="on" onclick="go('home')">صفحه اصلی</a>
+        <a onclick="go('shop')">فروشگاه</a>
+        <a onclick="go('shop')">محصولات</a>
+        <a onclick="go('home')">درباره ما</a>
+        <a onclick="go('home')">تماس با ما</a>
+      </nav>
+      <div class="ship">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l5 5L20 7"/></svg>
+        ضمانت اصالت کالا
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap"><div id="app"></div></main>
+
+<footer>
+  <div class="wrap ftop">
+    <div class="about">
+      <div class="logo" style="margin-bottom:14px;">
+        <div class="mk"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg></div>
+        <div><div class="nm" style="color:#fff">یدک‌مارت</div><div class="sb mono">AUTO PARTS · B2B</div></div>
+      </div>
+      <p>پلتفرم پخش عمده لوازم یدکی خودرو با بیش از ۱۲٬۰۰۰ کد کالای اصل از برندهای معتبر جهانی. تأمین مطمئن برای فروشگاه‌ها و تعمیرگاه‌ها با قیمت پلکانی و ضمانت اصالت.</p>
+      <div class="social">
+        <a title="اینستاگرام"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
+        <a title="تلگرام"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3 18.6 20c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-4.9 9-8.1c.4-.3-.1-.5-.6-.2L6.4 13 1.6 11.5c-1-.3-1-1 .2-1.5l18.7-7.2c.9-.3 1.6.2 1.4 1.5z"/></svg></a>
+        <a title="واتساپ"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.8 .8-2.8-.2-.3A8 8 0 1 1 12 20zm4.4-5.6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1-.6.8-.8 1-.3.2-.5.1a6.5 6.5 0 0 1-3.3-2.9c-.2-.4.2-.4.6-1.2.1-.1 0-.3 0-.4l-.7-1.7c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.3.9 2.5 1.1 2.7a10 10 0 0 0 4 3.5c1.9.7 1.9.5 2.3.5s1.4-.6 1.6-1.1.2-1 .1-1.1z"/></svg></a>
+      </div>
+    </div>
+    <div><h4>دسترسی سریع</h4><ul><li><a onclick="go('home')">صفحه اصلی</a></li><li><a onclick="go('shop')">فروشگاه</a></li><li><a onclick="go('shop')">محصولات پرفروش</a></li><li><a onclick="go('home')">وبلاگ فنی</a></li><li><a onclick="go('home')">درباره ما</a></li></ul></div>
+    <div><h4>پشتیبانی</h4><ul><li><a>راهنمای خرید عمده</a></li><li><a>شرایط همکاری فروش</a></li><li><a>رویه ارسال و مرجوعی</a></li><li><a>سوالات متداول</a></li><li><a>تماس با ما</a></li></ul></div>
+    <div>
+      <h4>خبرنامه</h4>
+      <p style="font-size:13.5px;color:#C9BEE3;line-height:1.9;margin:0;">از تخفیف‌های عمده و کالاهای جدید باخبر شوید.</p>
+      <div class="newsletter"><input placeholder="ایمیل شما"><button class="btn btn-orange" style="height:44px;padding:0 16px;" onclick="toast('عضویت شما ثبت شد ✓')">عضویت</button></div>
+      <div class="mono" style="margin-top:16px;font-size:13px;color:#C9BEE3;">📞 ۰۲۱ - ۹۱۰۰ ۲۲۵۵</div>
+    </div>
+  </div>
+  <div class="fbot">© ۱۴۰۵ یدک‌مارت — تمامی حقوق محفوظ است. | طراحی و توسعه اختصاصی</div>
+</footer>
+
+<!-- cart drawer -->
+<div class="overlay" id="overlay" onclick="closeCart()"></div>
+<div class="drawer" id="drawer">
+  <div class="dh"><h3>سبد خرید عمده</h3><button class="icon-btn" style="width:38px;height:38px;border-radius:11px" onclick="closeCart()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="dbody" id="cartBody"></div>
+  <div class="dfoot" id="cartFoot"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- data ---------- */
+const toFa = n => String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const money = n => toFa(n.toLocaleString('en-US'));
+
+// SVG part icons by category key
+const ICON = {
+  brake:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#7B45C9" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>',
+  filter:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#7B45C9" stroke-width="1.4"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M7 7h10M7 11h10M7 15h10"/></svg>',
+  oil:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#7B45C9" stroke-width="1.4"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/><path d="M9 14a3 3 0 0 0 3 3"/></svg>',
+  tire:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#7B45C9" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg>',
+  engine:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#7B45C9" stroke-width="1.4"><path d="M4 9h3l2-2h4v2h3l2 2h2v4h-2l-2 2H9l-2-2H4z"/><path d="M9 5h4"/></svg>',
+  battery:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#7B45C9" stroke-width="1.4"><rect x="3" y="8" width="18" height="11" rx="2"/><path d="M7 8V5h4v3M14 8V5h3v3M8 13h3M15 12v3M13.5 13.5h3"/></svg>',
+  susp:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#7B45C9" stroke-width="1.4"><circle cx="12" cy="4" r="2"/><circle cx="12" cy="20" r="2"/><path d="M12 6v1M10 8l4 2-4 2 4 2-4 2M12 17v1"/></svg>',
+  misc:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#7B45C9" stroke-width="1.4"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6L5 19l6-6a4 4 0 0 0 5.4-5.4l-2.1 2.1-2-2z"/></svg>'
+};
+const catColor = {
+  brake:['#F1EAFB','#5B2E9E'], filter:['#FDECE0','#F26A1B'], oil:['#E7F6EE','#1F9D63'],
+  tire:['#EAF0FE','#2F53E6'], engine:['#FBEAF1','#C0397A'], battery:['#FDF3E0','#F2A81B'],
+  susp:['#EDEAFB','#6D3BC0'], misc:['#EFF0F3','#4A4360']
+};
+const CATS = [
+  {key:'brake', name:'لنت و دیسک ترمز', count:1240},
+  {key:'filter', name:'فیلتر و صافی', count:980},
+  {key:'oil', name:'روغن و روانکار', count:760},
+  {key:'tire', name:'لاستیک و رینگ', count:1520},
+  {key:'engine', name:'قطعات موتوری', count:2140},
+  {key:'battery', name:'برق و باتری', count:640},
+  {key:'susp', name:'تعلیق و فرمان', count:890},
+  {key:'misc', name:'لوازم مصرفی', count:1310},
+];
+const BRANDS = ['BOSCH','MANN','VALEO','NGK','DENSO','SKF','GATES','MAHLE','BREMBO'];
+
+const NAMES = {
+  brake:['لنت ترمز جلو','دیسک ترمز چرخ جلو','لنت ترمز عقب','کالیپر ترمز'],
+  filter:['فیلتر روغن موتور','فیلتر هوا','فیلتر کابین','فیلتر بنزین'],
+  oil:['روغن موتور تمام سنتتیک','روغن گیربکس','مایع خنک‌کننده','روغن ترمز DOT4'],
+  tire:['لاستیک رادیال','رینگ آلومینیومی','والف تایر','وزنه بالانس'],
+  engine:['واشر سرسیلندر','تسمه تایم','پمپ آب','شمع پلاتینی'],
+  battery:['باتری ۶۰ آمپر','دینام','استارت','رله چراغ'],
+  susp:['کمک فنر جلو','سیبک فرمان','طبق چرخ','بلبرینگ چرخ'],
+  misc:['برف پاک‌کن','لامپ هالوژن','چراغ مه‌شکن','بوق حلزونی'],
+};
+const UNIT = {brake:'عدد',filter:'عدد',oil:'لیتر',tire:'حلقه',engine:'عدد',battery:'عدد',susp:'عدد',misc:'عدد'};
+
+// build product catalogue
+let PID=1000;
+const PRODUCTS=[];
+CATS.forEach(c=>{
+  NAMES[c.key].forEach((nm,i)=>{
+    for(let k=0;k<2;k++){
+      const brand=BRANDS[(PID+k)%BRANDS.length];
+      const base=[420000,890000,1650000,2450000,3500000,5200000][(PID+i+k)%6];
+      const off=[0,0,10,15,0,20][(PID+i)%6];
+      PRODUCTS.push({
+        id:++PID, cat:c.key, catName:c.name, name:nm+(k?' (پک ۴ عددی)':''),
+        brand, sku:brand.slice(0,3)+'-'+(10000+PID*7%89999),
+        price:base, off, old: off?Math.round(base/(1-off/100)):0,
+        rating:(3.9+((PID%11)/10)).toFixed(1), sold:120+(PID*13%880),
+        moq:[5,10,4,2,20][(PID+i)%5], stock:40+(PID*7%460), unit:UNIT[c.key]
+      });
+    }
+  });
+});
+
+/* ---------- state ---------- */
+let state={route:'home', cat:'all', brand:'all', sort:'newest', q:'', selId:null, tab:'desc', qty:1};
+let cart={}; // id -> qty
+
+/* ---------- helpers ---------- */
+const el=id=>document.getElementById(id);
+function thumb(p,h){return `<div class="thumb" style="height:${h||158}px" onclick="openProduct(${p.id})">${ICON[p.cat]||ICON.misc}${p.off?`<span class="tag">٪${toFa(p.off)}</span>`:''}<button class="fav" onclick="event.stopPropagation();toast('به علاقه‌مندی افزوده شد')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></button></div>`;}
+function stars(r){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="var(--amber)"><path d="M12 2l3 6.5 7 .9-5 4.9 1.2 7-6.2-3.4L5.8 21l1.2-7-5-4.9 7-.9z"/></svg>`;}
+
+function productCard(p){
+  return `<div class="card"><div>${thumb(p)}</div>
+    <div class="body">
+      <div class="brand mono">${p.brand}</div>
+      <div class="name" onclick="openProduct(${p.id})">${p.name}</div>
+      <div class="sku mono">${p.sku}</div>
+      <div class="rate">${stars(p.rating)}<span class="n">${toFa(p.rating)}</span><span class="s">(${toFa(p.sold)} فروش)</span></div>
+      <div style="margin-top:auto">
+        <div class="price"><span class="now mono">${money(p.price)}</span><span class="u">تومان</span>${p.old?`<span class="old mono">${money(p.old)}</span>`:''}</div>
+        <div class="moq">حداقل سفارش عمده: ${toFa(p.moq)} ${p.unit}</div>
+        <button class="add" onclick="addCart(${p.id},${p.moq})">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+          افزودن به سبد
+        </button>
+      </div>
+    </div></div>`;
+}
+
+/* ---------- views ---------- */
+function viewHome(){
+  const feats=[
+    ['ضمانت اصالت کالا','تضمین ۱۰۰٪ اورجینال','<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l8 3v6c0 5-3.4 8.4-8 11-4.6-2.6-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>'],
+    ['ارسال به سراسر کشور','پست پیشاف و تیپاکس','<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="6" width="14" height="11" rx="1.5"/><path d="M15 9h4l3 3v5h-7"/><circle cx="6" cy="18" r="1.8"/><circle cx="18" cy="18" r="1.8"/></svg>'],
+    ['پرداخت اعتباری','تسویه دوره‌ای همکاران','<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>'],
+    ['ضمانت مرجوعی','بازگشت ۷ روزه کالا','<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 1 3 6.7"/><path d="M3 20v-5h5"/></svg>'],
+  ];
+  const bestsellers=[...PRODUCTS].sort((a,b)=>b.sold-a.sold).slice(0,10);
+  const posts=[
+    ['نگهداری','۵','چطور لنت ترمز مناسب خودرو انتخاب کنیم؟','راهنمای کامل انتخاب لنت ترمز بر اساس نوع خودرو، سبک رانندگی و استاندارد کارخانه.','var(--purple)'],
+    ['فنی','۷','زمان مناسب تعویض روغن موتور چه موقع است؟','بررسی بازه‌های استاندارد تعویض روغن و علائم هشدار برای موتورهای بنزینی و دیزلی.','var(--orange)'],
+    ['خرید عمده','۴','مزایای خرید عمده قطعات از پلتفرم B2B','چگونه با خرید عمده، حاشیه سود فروشگاه خود را افزایش دهید.','var(--purple-2)'],
+  ];
+  return `<div class="view">
+    <section style="margin-top:0">
+      <div class="hero">
+        <div class="hero-main">
+          <div class="in">
+            <span class="chip"><span class="dot"></span> مرجع پخش عمده لوازم یدکی</span>
+            <h1>قطعه اصل، قیمت عمده،<br><span>تحویل سریع</span></h1>
+            <p>بیش از ۱۲٬۰۰۰ کد کالای اصلی از برندهای معتبر جهانی — لنت، فیلتر، روغن، لاستیک و قطعات موتوری با ضمانت اصالت.</p>
+            <div class="hero-cta">
+              <button class="btn btn-orange" style="height:52px;padding:0 24px;font-size:15px" onclick="go('shop')">ورود به فروشگاه
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+              <button class="btn" style="height:52px;padding:0 22px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25)">درخواست همکاری فروش</button>
+            </div>
+            <div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="hero-parts">
+            <svg width="230" height="230" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+          </div>
+        </div>
+        <div class="hero-side">
+          <div class="promo">
+            <div><div class="t">پیشنهاد ویژه این هفته</div><div class="b">تا ۲۵٪ تخفیف<br>روی فیلتر و روغن</div></div>
+            <button onclick="go('shop')">مشاهده تخفیف‌ها</button>
+          </div>
+          <div class="stats">
+            <div class="s"><div class="v mono">۱۲K+</div><div class="k">کد کالا</div></div><div class="sep"></div>
+            <div class="s"><div class="v mono">۴۸</div><div class="k">برند معتبر</div></div><div class="sep"></div>
+            <div class="s"><div class="v mono">۹.۸K</div><div class="k">فروشگاه همکار</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="features">${feats.map(f=>`<div class="feature"><div class="ic">${f[2]}</div><div><div class="tt">${f[0]}</div><div class="ss">${f[1]}</div></div></div>`).join('')}</div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2><span class="bar"></span>دسته‌بندی محصولات</h2><a onclick="go('shop')">مشاهده همه ›</a></div>
+      <div class="cats">${CATS.map(c=>{const cc=catColor[c.key];return `<div class="cat" onclick="openCat('${c.key}')"><div class="ic" style="background:${cc[0]}">${ICON[c.key].replace('#7B45C9',cc[1]).replace('width="72" height="72"','width="30" height="30"')}</div><div class="nm">${c.name}</div><div class="ct mono">${toFa(c.count)} کالا</div></div>`}).join('')}</div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2><span class="bar"></span>پرفروش‌ترین قطعات</h2><a onclick="go('shop')">مشاهده همه ›</a></div>
+      <div class="grid home">${bestsellers.map(productCard).join('')}</div>
+    </section>
+
+    <div class="wholesale">
+      <div class="in"><h2>با یدک‌مارت، فروشگاه‌تان را عمده تأمین کنید</h2><p>قیمت پلکانی عمده، اعتبار خرید، تسویه دوره‌ای و پنل اختصاصی مدیریت سفارش — همه در یک پلتفرم.</p></div>
+      <button class="btn btn-orange" style="height:54px;padding:0 28px;font-size:15px">ثبت‌نام همکاری فروش</button>
+    </div>
+
+    <section>
+      <div style="text-align:center;margin-bottom:20px"><h2 style="font-size:21px;font-weight:800;margin:0">برندهای معتبر جهانی</h2><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">نمایندگی رسمی و تضمین اصالت کالا</p></div>
+      <div class="brands">${BRANDS.map(b=>`<div class="bl">${b}</div>`).join('')}</div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2><span class="bar"></span>آخرین مقالات</h2><a onclick="go('home')">همه مقالات ›</a></div>
+      <div class="blog">${posts.map(a=>`<div class="post" onclick="toast('مقاله به‌زودی منتشر می‌شود')"><div class="im" style="background:linear-gradient(135deg,${a[4]},var(--purple-2))">مقاله فنی</div><div class="bd"><div class="meta mono"><span class="c">${a[0]}</span>·<span>${a[1]} دقیقه مطالعه</span></div><div class="tt">${a[2]}</div><div class="ex">${a[3]}</div></div></div>`).join('')}</div>
+    </section>
+  </div>`;
+}
+
+function filtered(){
+  let list=PRODUCTS.filter(p=>
+    (state.cat==='all'||p.cat===state.cat)&&
+    (state.brand==='all'||p.brand===state.brand)&&
+    (!state.q||p.name.includes(state.q)||p.brand.includes(state.q.toUpperCase())||p.sku.includes(state.q))
+  );
+  if(state.sort==='cheap')list.sort((a,b)=>a.price-b.price);
+  else if(state.sort==='expensive')list.sort((a,b)=>b.price-a.price);
+  else if(state.sort==='off')list.sort((a,b)=>b.off-a.off);
+  else list.sort((a,b)=>b.id-a.id);
+  return list;
+}
+function viewShop(){
+  const list=filtered();
+  const catName = state.cat==='all'?'همه محصولات':(CATS.find(c=>c.key===state.cat)||{}).name;
+  return `<div class="view">
+    <div class="crumb mono"><a onclick="go('home')">خانه</a><span>/</span><span class="cur">${state.q?('جستجو: '+state.q):catName}</span></div>
+    <div class="shop">
+      <aside class="filters">
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><path d="M22 3H2l8 9.5V19l4 2v-8.5z"/></svg>فیلترها</h3>
+        <div class="fgroup"><div class="flabel">دسته‌بندی</div><div class="fcat">
+          <button class="${state.cat==='all'?'on':''}" onclick="setCat('all')">همه محصولات ${state.cat==='all'?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>':''}</button>
+          ${CATS.map(c=>`<button class="${state.cat===c.key?'on':''}" onclick="setCat('${c.key}')">${c.name} ${state.cat===c.key?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>':`<span class="mono" style="font-size:11px;color:var(--muted)">${toFa(c.count)}</span>`}</button>`).join('')}
+        </div></div>
+        <div class="fgroup"><div class="flabel">برند</div><div class="fchips">
+          <button class="${state.brand==='all'?'on':''}" onclick="setBrand('all')">همه</button>
+          ${BRANDS.map(b=>`<button class="${state.brand===b?'on':''}" onclick="setBrand('${b}')">${b}</button>`).join('')}
+        </div></div>
+        <div class="fgroup"><div class="flabel">محدوده قیمت (تومان)</div><input type="range" min="0" max="100" value="60" class="range"><div class="rangeval mono"><span>۰</span><span>۶٬۰۰۰٬۰۰۰</span></div></div>
+        <div class="promo-card"><div class="h">۱۵٪ تخفیف اولین سفارش عمده</div><div class="p">با ثبت‌نام همکاری فروش، اولین سفارش عمده شما مشمول تخفیف ویژه می‌شود.</div><button class="btn btn-orange" style="margin-top:12px;width:100%;height:40px">ثبت‌نام</button></div>
+      </aside>
+      <div>
+        <div class="shopbar">
+          <div style="font-size:13.5px;color:var(--ink-soft)"><b class="mono">${toFa(list.length)}</b> کالا یافت شد</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--muted)">مرتب‌سازی:</span>
+            <select onchange="setSort(this.value)">
+              <option value="newest" ${state.sort==='newest'?'selected':''}>جدیدترین</option>
+              <option value="cheap" ${state.sort==='cheap'?'selected':''}>ارزان‌ترین</option>
+              <option value="expensive" ${state.sort==='expensive'?'selected':''}>گران‌ترین</option>
+              <option value="off" ${state.sort==='off'?'selected':''}>بیشترین تخفیف</option>
+            </select></div>
+        </div>
+        ${list.length?`<div class="grid shopgrid">${list.map(productCard).join('')}</div>`:`<div style="text-align:center;padding:80px 20px;color:var(--muted)">کالایی با این فیلترها یافت نشد.</div>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+function viewProduct(){
+  const p=PRODUCTS.find(x=>x.id===state.selId); if(!p)return viewShop();
+  const total=p.price*state.qty;
+  const related=PRODUCTS.filter(x=>x.cat===p.cat&&x.id!==p.id).slice(0,5);
+  const tabBtn=(k,l)=>`<button class="${state.tab===k?'on':''}" onclick="setTab('${k}')">${l}</button>`;
+  let tabBody='';
+  if(state.tab==='desc') tabBody=`<p style="margin:0">${p.name} از برند ${p.brand} با تضمین اصالت و کیفیت استاندارد کارخانه‌ای عرضه می‌شود. این قطعه برای عملکرد پایدار، دوام بالا و سازگاری کامل با خودروهای هدف طراحی شده است. مناسب برای فروش عمده به فروشگاه‌ها و تعمیرگاه‌ها با قیمت پلکانی و شرایط تسویه دوره‌ای.</p>`;
+  else if(state.tab==='spec') tabBody=[['برند',p.brand],['شماره فنی',p.sku],['دسته‌بندی',p.catName],['واحد فروش',p.unit],['حداقل سفارش عمده',toFa(p.moq)+' '+p.unit],['موجودی انبار',toFa(p.stock)+' '+p.unit]].map(r=>`<div class="specrow"><span class="k">${r[0]}</span><span class="v mono">${r[1]}</span></div>`).join('');
+  else tabBody=`<div style="display:flex;gap:12px;align-items:center"><div style="font-size:40px;font-weight:800;color:var(--purple)" class="mono">${toFa(p.rating)}</div><div><div>${stars()}${stars()}${stars()}${stars()}${stars()}</div><div style="font-size:13px;color:var(--muted);margin-top:4px">بر اساس ${toFa(p.sold)} خرید ثبت‌شده</div></div></div><p style="margin-top:16px">کاربران این محصول را از نظر کیفیت و اصالت تأیید کرده‌اند.</p>`;
+  return `<div class="view">
+    <div class="crumb mono"><a onclick="go('home')">خانه</a><span>/</span><a onclick="go('shop')">فروشگاه</a><span>/</span><span class="cur">${p.name}</span></div>
+    <div class="pd">
+      <div>
+        <div class="gal">${ICON[p.cat].replace('width="72" height="72"','width="150" height="150"')}${p.off?`<span class="tag" style="top:14px;right:14px;font-size:14px;padding:6px 12px">٪${toFa(p.off)} تخفیف</span>`:''}</div>
+        <div class="thumbs"><div class="on"></div><div></div><div></div><div></div></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="brandtag mono">${p.brand}</span>
+          <div style="display:flex;align-items:center;gap:6px">${stars(p.rating)}<b>${toFa(p.rating)}</b><span style="font-size:12.5px;color:var(--muted)">· ${toFa(p.sold)} فروش</span></div>
+        </div>
+        <h1>${p.name}</h1>
+        <div class="mono" style="font-size:12.5px;color:var(--muted)">شماره فنی: ${p.sku}</div>
+        <div class="kv">
+          <div><div class="k">دسته‌بندی</div><div class="v">${p.catName}</div></div>
+          <div><div class="k">موجودی انبار</div><div class="v mono" style="color:var(--green)">${toFa(p.stock)} ${p.unit}</div></div>
+          <div><div class="k">حداقل سفارش</div><div class="v">${toFa(p.moq)} ${p.unit}</div></div>
+        </div>
+        <div class="buybox">
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <span style="font-size:15px;color:var(--muted)">قیمت عمده هر ${p.unit}:</span>
+            <span class="mono" style="font-size:28px;font-weight:800;color:var(--purple-ink)">${money(p.price)}</span><span style="font-size:13px;color:var(--muted)">تومان</span>
+            ${p.old?`<span class="mono" style="font-size:15px;color:var(--muted);text-decoration:line-through">${money(p.old)}</span>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap">
+            <div class="qty"><button onclick="setQty(-1,${p.moq})">−</button><span class="mono">${toFa(state.qty)}</span><button onclick="setQty(1,${p.moq})">+</button></div>
+            <button class="btn btn-purple" style="flex:1;min-width:180px;height:52px;font-size:15px" onclick="addCart(${p.id},${state.qty})">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+              افزودن به سبد خرید</button>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:14px"><span style="color:var(--muted)">مبلغ کل (${toFa(state.qty)} ${p.unit}):</span><span class="mono" style="font-weight:800;font-size:17px">${money(total)} تومان</span></div>
+        </div>
+        <div class="trust">
+          <div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8"><path d="M12 2l8 3v6c0 5-3.4 8.4-8 11-4.6-2.6-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>ضمانت اصالت</div>
+          <div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.8"><rect x="1" y="6" width="14" height="11" rx="1.5"/><path d="M15 9h4l3 3v5h-7"/><circle cx="6" cy="18" r="1.8"/><circle cx="18" cy="18" r="1.8"/></svg>ارسال سریع</div>
+          <div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>پرداخت اعتباری</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs"><div class="tabhead">${tabBtn('desc','توضیحات محصول')}${tabBtn('spec','مشخصات فنی')}${tabBtn('review','نظرات کاربران')}</div><div class="tabbody">${tabBody}</div></div>
+    <section><div class="sec-head"><h2><span class="bar"></span>محصولات مرتبط</h2></div><div class="grid home">${related.map(productCard).join('')}</div></section>
+  </div>`;
+}
+
+/* ---------- render ---------- */
+function render(){
+  const app=el('app');
+  if(state.route==='shop')app.innerHTML=viewShop();
+  else if(state.route==='product')app.innerHTML=viewProduct();
+  else app.innerHTML=viewHome();
+  // nav active
+  document.querySelectorAll('#topnav a').forEach((a,i)=>a.classList.toggle('on',(state.route==='home'&&i===0)||(state.route!=='home'&&i===1)));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------- actions ---------- */
+function go(r){state.route=r; if(r==='shop'){/*keep filters*/} render();}
+function openCat(k){state.cat=k;state.brand='all';state.q='';el('q').value='';state.route='shop';render();}
+function setCat(k){state.cat=k;render();}
+function setBrand(b){state.brand=b;render();}
+function setSort(s){state.sort=s;render();}
+function onSearch(v){state.q=v.trim();if(state.route!=='shop'&&v.trim()){state.route='shop';}render();}
+function openProduct(id){state.selId=id;state.qty=(PRODUCTS.find(p=>p.id===id)||{}).moq||1;state.tab='desc';state.route='product';render();}
+function setTab(t){state.tab=t;render();}
+function setQty(d,min){state.qty=Math.max(min||1,state.qty+d);render();}
+
+function addCart(id,q){cart[id]=(cart[id]||0)+q;updateCart();toast('به سبد خرید افزوده شد ✓');}
+function updateCart(){
+  const count=Object.values(cart).reduce((a,b)=>a+b,0);
+  const b=el('cbadge'); b.textContent=toFa(count); b.style.display=count?'grid':'none';
+  renderCart();
+}
+function renderCart(){
+  const ids=Object.keys(cart);
+  const body=el('cartBody'), foot=el('cartFoot');
+  if(!ids.length){body.innerHTML=`<div class="empty"><div style="font-size:44px">🛒</div><div style="margin-top:12px">سبد خرید شما خالی است</div></div>`;foot.innerHTML='';return;}
+  let total=0;
+  body.innerHTML=ids.map(id=>{const p=PRODUCTS.find(x=>x.id==id);const q=cart[id];total+=p.price*q;
+    return `<div class="citem"><div class="im">${ICON[p.cat].replace('width="72" height="72"','width="30" height="30"')}</div>
+      <div style="flex:1"><div class="nm">${p.name}</div><div class="mono">${money(p.price)} تومان</div>
+        <div class="qc"><button onclick="chg(${id},-1)">−</button><span class="mono">${toFa(q)}</span><button onclick="chg(${id},1)">+</button>
+          <a class="rm" onclick="rmCart(${id})">حذف</a></div></div></div>`;}).join('');
+  foot.innerHTML=`<div class="drow"><span style="color:var(--muted)">تعداد اقلام</span><span class="mono">${toFa(ids.length)}</span></div>
+    <div class="drow tot"><span>مبلغ کل</span><span class="mono">${money(total)} تومان</span></div>
+    <button class="btn btn-orange" style="width:100%;height:52px;margin-top:12px;font-size:15px" onclick="toast('به درگاه پرداخت هدایت می‌شوید...')">تکمیل سفارش</button>`;
+}
+function chg(id,d){cart[id]+=d;if(cart[id]<1)delete cart[id];updateCart();}
+function rmCart(id){delete cart[id];updateCart();}
+function openCart(){el('overlay').classList.add('open');el('drawer').classList.add('open');}
+function closeCart(){el('overlay').classList.remove('open');el('drawer').classList.remove('open');}
+
+let toastT;
+function toast(msg){const t=el('toast');t.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>'+msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
+
+render();updateCart();
+</script>
+</body>
+</html>

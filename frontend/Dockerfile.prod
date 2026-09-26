@@ -1,0 +1,76 @@
+# Production image for the Next.js frontend (multi-stage → small runtime).
+FROM node:24-alpine AS deps
+WORKDIR /app
+COPY package.json ./
+RUN npm install --omit=dev --no-audit --no-fund && cp -R node_modules /tmp/prod_modules \
+    && npm install --no-audit --no-fund
+
+FROM node:24-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+# NEXT_PUBLIC_* values are inlined at build time, so the public API/site URLs
+# must be supplied here.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_MAP_TILES
+# Business identity, contact details and trust badges (see frontend/lib/site.ts).
+ARG NEXT_PUBLIC_SITE_NAME
+ARG NEXT_PUBLIC_SITE_SHORT_NAME
+ARG NEXT_PUBLIC_SITE_TAGLINE
+ARG NEXT_PUBLIC_SELLER_NAME
+ARG NEXT_PUBLIC_CONTACT_PHONES
+ARG NEXT_PUBLIC_CONTACT_CITY
+ARG NEXT_PUBLIC_CONTACT_ADDRESS
+ARG NEXT_PUBLIC_CONTACT_HOURS
+ARG NEXT_PUBLIC_TELEGRAM_URL
+ARG NEXT_PUBLIC_BALE_URL
+ARG NEXT_PUBLIC_ENAMAD_ID
+ARG NEXT_PUBLIC_ENAMAD_CODE
+ARG NEXT_PUBLIC_ENAMAD_META
+ARG NEXT_PUBLIC_BITPAY_TRUST_URL
+ARG NEXT_PUBLIC_ZARINPAL_TRUST_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+    NEXT_PUBLIC_MAP_TILES=$NEXT_PUBLIC_MAP_TILES \
+    NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME \
+    NEXT_PUBLIC_SITE_SHORT_NAME=$NEXT_PUBLIC_SITE_SHORT_NAME \
+    NEXT_PUBLIC_SITE_TAGLINE=$NEXT_PUBLIC_SITE_TAGLINE \
+    NEXT_PUBLIC_SELLER_NAME=$NEXT_PUBLIC_SELLER_NAME \
+    NEXT_PUBLIC_CONTACT_PHONES=$NEXT_PUBLIC_CONTACT_PHONES \
+    NEXT_PUBLIC_CONTACT_CITY=$NEXT_PUBLIC_CONTACT_CITY \
+    NEXT_PUBLIC_CONTACT_ADDRESS=$NEXT_PUBLIC_CONTACT_ADDRESS \
+    NEXT_PUBLIC_CONTACT_HOURS=$NEXT_PUBLIC_CONTACT_HOURS \
+    NEXT_PUBLIC_TELEGRAM_URL=$NEXT_PUBLIC_TELEGRAM_URL \
+    NEXT_PUBLIC_BALE_URL=$NEXT_PUBLIC_BALE_URL \
+    NEXT_PUBLIC_ENAMAD_ID=$NEXT_PUBLIC_ENAMAD_ID \
+    NEXT_PUBLIC_ENAMAD_CODE=$NEXT_PUBLIC_ENAMAD_CODE \
+    NEXT_PUBLIC_ENAMAD_META=$NEXT_PUBLIC_ENAMAD_META \
+    NEXT_PUBLIC_BITPAY_TRUST_URL=$NEXT_PUBLIC_BITPAY_TRUST_URL \
+    NEXT_PUBLIC_ZARINPAL_TRUST_URL=$NEXT_PUBLIC_ZARINPAL_TRUST_URL \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NODE_OPTIONS=--max-old-space-size=768
+# `public/` is optional in this project — create it so the runtime COPY below
+# always has a valid source.
+RUN mkdir -p public && npm run build
+
+FROM node:24-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+# Run as an unprivileged user.
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+COPY --from=deps /tmp/prod_modules ./node_modules
+# --chown: the server runs as nextjs, and Next.js writes its page cache into
+# .next/cache and regenerated pages into .next/server at runtime. Copied as
+# root, every one of those writes failed with EACCES (286 in the old log).
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+# next.config is read again by `next start`, not only at build time. Without it
+# every runtime option silently reverted to its default in production — which
+# is why `poweredByHeader: false` never took effect and the site kept
+# advertising «X-Powered-By: Next.js».
+COPY --from=builder /app/next.config.ts ./next.config.ts
+USER nextjs
+EXPOSE 3000
+CMD ["npm", "run", "start"]

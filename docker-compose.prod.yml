@@ -1,0 +1,148 @@
+# Production stack for YadakMart.
+#
+# Security posture:
+#   * NOTHING is published to the host except nginx (80/443). Postgres, Redis
+#     and the app containers are reachable only on the internal docker network.
+#   * Redis is the Celery broker here (RabbitMQ's Erlang VM does not fit in
+#     this server's 1 GB of RAM).
+#   * Django runs under gunicorn with DEBUG=off; secrets come from .env.prod.
+name: yadakmart
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:8-alpine
+    # Password-protected even though it is not exposed publicly.
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    build: ./backend
+    # Single line on purpose: a folded YAML scalar would keep the newlines of
+    # the more-indented continuation lines and gunicorn would lose its flags.
+    # Box is 8 vCPU / 16GB, so 6 workers x 3 threads fits comfortably.
+    command: ["sh", "/app/entrypoint.sh", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "6", "--threads", "3", "--timeout", "90", "--access-logfile", "-", "--error-logfile", "-"]
+    env_file: .env.prod
+    environment:
+      COLLECT_STATIC: "1"
+    volumes:
+      - media:/app/media
+      - static:/app/staticfiles
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery_worker:
+    build: ./backend
+    # Handles everything EXCEPT SMS. Keeping SMS off this worker means a slow or
+    # failing SMS provider can never block order, invoice or image jobs.
+    command: celery -A config worker -l warning -Q default --concurrency=4 --max-tasks-per-child=200
+    env_file: .env.prod
+    volumes:
+      - media:/app/media
+    depends_on:
+      - web
+      - redis
+    restart: unless-stopped
+
+  celery_sms:
+    build: ./backend
+    # Dedicated single-slot SMS drain. Bursts (settlement reminders, campaigns)
+    # queue up here and leave at the rate limit set in settings, so the provider
+    # is never flooded and no message is lost.
+    command: celery -A config worker -l warning -Q sms --concurrency=1 --max-tasks-per-child=200
+    env_file: .env.prod
+    depends_on:
+      - web
+      - redis
+    restart: unless-stopped
+
+  celery_beat:
+    build: ./backend
+    command: celery -A config beat -l warning --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file: .env.prod
+    depends_on:
+      - web
+      - redis
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: ${PUBLIC_ORIGIN}/api
+        NEXT_PUBLIC_SITE_URL: ${PUBLIC_ORIGIN}
+        # Business identity, contact details and trust badges (see .env.example).
+        NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-}
+        NEXT_PUBLIC_SITE_SHORT_NAME: ${NEXT_PUBLIC_SITE_SHORT_NAME:-}
+        NEXT_PUBLIC_SITE_TAGLINE: ${NEXT_PUBLIC_SITE_TAGLINE:-}
+        NEXT_PUBLIC_SELLER_NAME: ${NEXT_PUBLIC_SELLER_NAME:-}
+        NEXT_PUBLIC_CONTACT_PHONES: ${NEXT_PUBLIC_CONTACT_PHONES:-}
+        NEXT_PUBLIC_CONTACT_CITY: ${NEXT_PUBLIC_CONTACT_CITY:-}
+        NEXT_PUBLIC_CONTACT_ADDRESS: ${NEXT_PUBLIC_CONTACT_ADDRESS:-}
+        NEXT_PUBLIC_CONTACT_HOURS: ${NEXT_PUBLIC_CONTACT_HOURS:-}
+        NEXT_PUBLIC_TELEGRAM_URL: ${NEXT_PUBLIC_TELEGRAM_URL:-}
+        NEXT_PUBLIC_BALE_URL: ${NEXT_PUBLIC_BALE_URL:-}
+        NEXT_PUBLIC_ENAMAD_ID: ${NEXT_PUBLIC_ENAMAD_ID:-}
+        NEXT_PUBLIC_ENAMAD_CODE: ${NEXT_PUBLIC_ENAMAD_CODE:-}
+        NEXT_PUBLIC_ENAMAD_META: ${NEXT_PUBLIC_ENAMAD_META:-}
+        NEXT_PUBLIC_BITPAY_TRUST_URL: ${NEXT_PUBLIC_BITPAY_TRUST_URL:-}
+        NEXT_PUBLIC_ZARINPAL_TRUST_URL: ${NEXT_PUBLIC_ZARINPAL_TRUST_URL:-}
+    environment:
+      INTERNAL_API_URL: http://web:8000/api
+      NEXT_PUBLIC_SITE_URL: ${PUBLIC_ORIGIN}
+    depends_on:
+      - web
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    # The only publicly reachable service.
+    environment:
+      # Rendered into the config template at start-up; it is the same secret
+      # admin path Django serves (a random path, never the default admin/).
+      ADMIN_URL: ${ADMIN_URL:?set ADMIN_URL in .env.prod}
+      NGINX_ENVSUBST_FILTER: ^ADMIN_URL$$
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/prod.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - media:/var/www/media:ro
+      - static:/var/www/static:ro
+    depends_on:
+      - web
+      - frontend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  media:
+  static:

@@ -1,0 +1,153 @@
+# YadakMart local stack. Everything runs in containers so no host Python/Node
+# is required, and no package is pulled from a CDN at runtime.
+name: yadakmart
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-yadakmart}
+      POSTGRES_USER: ${POSTGRES_USER:-yadak}
+      # Read from .env (see .env.example); the stack refuses to start without it.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"          # host 5433 to avoid clashing with local Postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    volumes:
+      # Permits Celery's transient queues on RabbitMQ 4 (see rabbitmq.conf).
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/99-yadakmart.conf:ro
+    ports:
+      - "15672:15672"        # management UI at http://localhost:15672 (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: ./backend
+    # entrypoint.sh waits for the DB, migrates, collects static, then runs this.
+    command: ["sh", "/app/entrypoint.sh", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+    env_file: .env
+    volumes:
+      - ./backend:/app
+      - media:/app/media
+    ports:
+      - "8020:8000"          # host 8020 (8000 is used by another local project)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  celery_worker:
+    build: ./backend
+    command: celery -A config worker -l info
+    env_file: .env
+    volumes:
+      - ./backend:/app
+      - media:/app/media
+    depends_on:
+      web:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  flower:
+    build: ./backend
+    # Live Celery monitoring UI: http://localhost:5555
+    command: celery -A config flower --port=5555
+    env_file: .env
+    volumes:
+      - ./backend:/app
+    ports:
+      - "5555:5555"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  celery_beat:
+    build: ./backend
+    # DatabaseScheduler lets the supplier edit reminder timing from the admin.
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file: .env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      web:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    # NEXT_PUBLIC_* is read by the browser, so it must point at the host-exposed
+    # API port (8020). INTERNAL_API_URL is for server-side fetches (sitemap).
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8020/api
+      INTERNAL_API_URL: http://web:8000/api
+      NEXT_PUBLIC_SITE_URL: http://localhost:3010
+      # Business identity, contact details and trust badges (see .env.example).
+      NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-}
+      NEXT_PUBLIC_SITE_SHORT_NAME: ${NEXT_PUBLIC_SITE_SHORT_NAME:-}
+      NEXT_PUBLIC_SITE_TAGLINE: ${NEXT_PUBLIC_SITE_TAGLINE:-}
+      NEXT_PUBLIC_SELLER_NAME: ${NEXT_PUBLIC_SELLER_NAME:-}
+      NEXT_PUBLIC_CONTACT_PHONES: ${NEXT_PUBLIC_CONTACT_PHONES:-}
+      NEXT_PUBLIC_CONTACT_CITY: ${NEXT_PUBLIC_CONTACT_CITY:-}
+      NEXT_PUBLIC_CONTACT_ADDRESS: ${NEXT_PUBLIC_CONTACT_ADDRESS:-}
+      NEXT_PUBLIC_CONTACT_HOURS: ${NEXT_PUBLIC_CONTACT_HOURS:-}
+      NEXT_PUBLIC_TELEGRAM_URL: ${NEXT_PUBLIC_TELEGRAM_URL:-}
+      NEXT_PUBLIC_BALE_URL: ${NEXT_PUBLIC_BALE_URL:-}
+      NEXT_PUBLIC_ENAMAD_ID: ${NEXT_PUBLIC_ENAMAD_ID:-}
+      NEXT_PUBLIC_ENAMAD_CODE: ${NEXT_PUBLIC_ENAMAD_CODE:-}
+      NEXT_PUBLIC_ENAMAD_META: ${NEXT_PUBLIC_ENAMAD_META:-}
+      NEXT_PUBLIC_BITPAY_TRUST_URL: ${NEXT_PUBLIC_BITPAY_TRUST_URL:-}
+      NEXT_PUBLIC_ZARINPAL_TRUST_URL: ${NEXT_PUBLIC_ZARINPAL_TRUST_URL:-}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules      # keep container's installed deps
+      - /app/.next
+    ports:
+      - "3010:3000"
+    depends_on:
+      - web
+
+  nginx:
+    image: nginx:alpine
+    # Single entrypoint / load balancer: http://localhost:8090
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8090:80"
+    depends_on:
+      - web
+      - frontend
+
+volumes:
+  pgdata:
+  redisdata:
+  media:

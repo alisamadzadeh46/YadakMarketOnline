@@ -1,0 +1,172 @@
+# Public edge for YadakMart. Terminates TLS, serves media/static directly and
+# proxies everything else to Django (API/admin) or Next.js (site).
+#
+# This is a template: the nginx image renders it at start-up and substitutes
+# ${ADMIN_URL} from the environment (see the nginx service in
+# docker-compose.prod.yml). Only that variable is substituted, so nginx's own
+# $variables are left untouched.
+
+# Docker's embedded DNS. nginx resolves an upstream host ONCE at startup and
+# caches the IP forever, so recreating the web/frontend container (any redeploy)
+# left nginx proxying to a dead IP and the whole site 502'd until nginx itself
+# was restarted — the intermittent "site is down" reports. Re-resolving through
+# a variable proxy_pass with a short TTL makes redeploys seamless.
+resolver 127.0.0.11 valid=10s ipv6=off;
+resolver_timeout 5s;
+
+# Basic abuse protection.
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=20r/s;
+limit_req_zone $binary_remote_addr zone=login_limit:10m rate=2r/s;
+
+# The site may sit behind a CDN that terminates TLS at the edge and pulls from
+# this origin. Trust its X-Forwarded-Proto so Django knows the real request was
+# HTTPS (otherwise image/absolute URLs come out http and get blocked as mixed
+# content). Falls back to the connection scheme for direct hits.
+map $http_x_forwarded_proto $client_proto {
+    default $scheme;
+    "~.+"   $http_x_forwarded_proto;
+}
+
+# ---- One server for both 80 and 443 ----
+# We do NOT force an 80->443 redirect: a CDN may pull the origin over HTTP while
+# the visitor is already on HTTPS at the edge, and a redirect there just loops.
+# HTTPS for real users is enforced at the edge instead.
+server {
+    listen 80;
+    listen 443 ssl;
+    http2 on;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:5m;
+    ssl_session_timeout 1h;
+
+    client_max_body_size 25m;
+    server_tokens off;
+
+    # ---- Security headers (cover the frontend + static; Django adds its own) ----
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    # NOT "same-origin": that sends NO Referer at all on cross-origin
+    # navigations, and the payment gateways (bitpay.ir/zarinpal) reject the
+    # session with «آدرس ارجاعی (ریفرر) معتبر نمی‌باشد» when the referrer is
+    # missing. "strict-origin-when-cross-origin" (the modern browser default)
+    # leaks only the bare origin — never a path, query string or token — to a
+    # third party, and still sends nothing at all when downgrading to HTTP.
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    # X-XSS-Protection is deprecated and can itself introduce bugs; modern
+    # browsers rely on CSP instead, so it is explicitly disabled.
+    add_header X-XSS-Protection "0" always;
+    add_header X-Permitted-Cross-Domain-Policies none always;
+    add_header Cross-Origin-Opener-Policy same-origin always;
+    add_header Cross-Origin-Resource-Policy same-site always;
+    # Cross-Origin-Embedder-Policy is intentionally NOT set: require-corp would
+    # block the OpenStreetMap map tiles used by the address picker.
+    add_header Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()" always;
+    # HSTS: tell browsers to reach this host over HTTPS only. Arvan terminates
+    # TLS for real visitors, so this is what they actually see.
+    # Deliberately WITHOUT `includeSubDomains` and `preload`: www does not
+    # resolve yet, and preload is effectively irreversible (removal takes
+    # months). Add both once www is fixed and HTTPS everywhere is confirmed.
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    # CSP: 'unsafe-inline' is still required by Next.js' inline bootstrap
+    # script — removing it needs per-request nonces, which means giving up
+    # static rendering. 'unsafe-eval' is NOT required by a production Next
+    # build (only by dev-mode React Refresh), so it is dropped: it is the half
+    # that turns an injected string into executable code.
+    add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://trustseal.enamad.ir https://bitpay.ir; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; form-action 'self'; upgrade-insecure-requests" always;
+
+    # eNamad (نماد اعتماد) domain-ownership file check. eNamad regenerates the
+    # numeric code every attempt, so match ANY «<digits>.txt» at the root and
+    # serve it as an empty file — no nginx change needed when the code changes.
+    location ~ "^/[0-9]{5,}\.txt$" {
+        default_type text/plain;
+        add_header Cache-Control "no-store";
+        return 200 "";
+    }
+
+    # Anything still probing the default admin path gets nothing.
+    location /admin/ { return 404; }
+
+    # The OpenAPI schema/docs map every endpoint for an attacker — keep them
+    # off the public internet (still reachable in the dev stack).
+    location ~ ^/api/(docs|schema)/ {
+        return 404;
+    }
+
+    # Auth endpoints get a tighter rate limit than the rest of the API.
+    location ~ ^/api/accounts/(token|register|password-reset)/ {
+        limit_req zone=login_limit burst=10 nodelay;
+        set $django web:8000;
+        proxy_pass http://$django;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $client_proto;
+    }
+
+    location /api/ {
+        limit_req zone=api_limit burst=40 nodelay;
+        set $django web:8000;
+        proxy_pass http://$django;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $client_proto;
+    }
+
+    # Admin lives on a secret path (ADMIN_URL in .env.prod), not /admin/, so the
+    # constant bot traffic against /admin/ never reaches Django at all. The
+    # same variable configures Django, so the two can never drift apart.
+    location /${ADMIN_URL} {
+        limit_req zone=login_limit burst=20 nodelay;
+        set $django web:8000;
+        proxy_pass http://$django;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $client_proto;
+    }
+
+    # Uploaded files and collected static served straight off disk.
+    # KYC documents and payment receipts live under media/private/. They must
+    # never be reachable by URL: Django hands out a signed, expiring token and
+    # then delegates the actual send to the internal location below.
+    location ^~ /media/private/ {
+        return 404;
+    }
+
+    location /media/ {
+        alias /var/www/media/;
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+
+    # Only reachable via X-Accel-Redirect from Django — never from outside.
+    location /protected-media/ {
+        internal;
+        alias /var/www/media/private/;
+        add_header Cache-Control "private, no-store" always;
+        add_header X-Content-Type-Options nosniff always;
+    }
+    location /static/ {
+        alias /var/www/static/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location / {
+        set $nextjs frontend:3000;
+        proxy_pass http://$nextjs;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $client_proto;
+    }
+}

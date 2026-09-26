@@ -1,0 +1,41 @@
+# Core framework.
+# Pinned to the Django 5.2 LTS line: it's the newest release the whole
+# ecosystem (notably django-celery-beat, which we need for admin-editable SMS
+# schedules) supports today, and it has security support through 2028.
+# Django 6.0 was evaluated but django-celery-beat requires Django<6.0.
+Django>=5.2,<6.0
+djangorestframework==3.17.1
+djangorestframework-simplejwt==5.5.1
+
+# Database
+psycopg[binary]==3.2.10
+
+# Async tasks / scheduling — RabbitMQ broker, Redis result backend
+celery==5.6.3
+django-celery-beat==2.8.1          # DB-backed, admin-editable periodic schedules
+redis==5.2.1                       # python client for cache/result backend
+
+# API tooling
+django-cors-headers==4.9.0
+django-filter==25.2                # dynamic shop filters
+drf-spectacular==0.28.0            # OpenAPI schema + Swagger UI
+
+# Media / images
+Pillow==11.3.0
+
+# Config & security
+django-environ==0.12.0
+argon2-cffi==25.1.0                # Argon2 password hashing (stronger default)
+
+# Static files for the Django admin (frontend is served separately by Next.js)
+whitenoise==6.9.0
+
+# Monitoring
+flower==2.0.1                      # live Celery dashboard (queue/task health)
+sentry-sdk==2.19.2                 # error tracking; enabled only when SENTRY_DSN is set
+
+# Production server
+gunicorn==23.0.0
+
+# Excel price-list import (apps.catalog.management.commands.import_pricelist)
+openpyxl==3.1.5
