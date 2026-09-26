@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YadakMarket Online</title>
+<meta name="description" content="A multi-vendor marketplace for automotive spare parts with a floating commission and automatic revenue split. Django REST Framework and Next.js.">
+<style>
+  :root {
+    --bg: #f7f5fc; --surface: #ffffff; --text: #1d1530; --muted: #6b6384;
+    --purple: #5b2e9e; --purple-soft: #efe8fb; --orange: #f26a1b; --border: #e6e0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #130e1f; --surface: #1d1630; --text: #efeaf9; --muted: #a79fc0;
+      --purple: #a57cf0; --purple-soft: #2a2045; --orange: #ff8a45; --border: #30264a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--purple); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  header { background: linear-gradient(135deg, #3a1c6e, #7b45c9); color: #fff; padding: 64px 0 56px; }
+  header h1 { margin: 0 0 12px; font-size: clamp(32px, 5vw, 48px); line-height: 1.15; }
+  header p { margin: 0 0 24px; max-width: 680px; font-size: 18px; color: #e9e1f8; }
+  .btn { display: inline-block; padding: 12px 22px; border-radius: 12px; font-weight: 600;
+    text-decoration: none; background: var(--orange); color: #fff; margin: 0 8px 8px 0; }
+  .btn.ghost { background: rgba(255,255,255,.14); }
+  .hero-shot { margin-top: 40px; border-radius: 16px; width: 100%; display: block;
+    box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  section { padding: 56px 0 8px; }
+  h2 { font-size: 28px; margin: 0 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 28px; max-width: 760px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+  .card h3 { margin: 0 0 8px; font-size: 17px; }
+  .card p, .card li { color: var(--muted); margin: 0; font-size: 15px; }
+  .card ul { margin: 0; padding-left: 18px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 16px;
+    overflow: hidden; border: 1px solid var(--border); font-size: 15px; }
+  th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: var(--purple-soft); }
+  td.num, th.num { text-align: right; }
+  .tablewrap { overflow-x: auto; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .tabs button { border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    padding: 8px 16px; border-radius: 999px; cursor: pointer; font: inherit; }
+  .tabs button[aria-selected="true"] { background: var(--purple); border-color: var(--purple); color: #fff; }
+  .gallery { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  figure { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  figure img { width: 100%; height: 200px; object-fit: cover; object-position: top; display: block; cursor: zoom-in; }
+  figcaption { padding: 10px 14px; font-size: 14px; color: var(--muted); }
+  .viewer { position: fixed; inset: 0; background: rgba(10,6,20,.9); display: none;
+    align-items: flex-start; justify-content: center; overflow: auto; padding: 24px 16px; z-index: 10; }
+  .viewer.open { display: flex; }
+  .viewer img { max-width: min(1440px, 100%); border-radius: 12px; cursor: zoom-out; }
+  .stack span { display: inline-block; background: var(--purple-soft); color: var(--text);
+    border-radius: 999px; padding: 6px 14px; margin: 0 8px 8px 0; font-size: 14px; }
+  footer { padding: 48px 0; color: var(--muted); font-size: 14px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>YadakMarket Online</h1>
+    <p>A multi-vendor marketplace for automotive spare parts. Suppliers sell to retail customers and to
+      wholesale shops through one storefront, and every sale is split automatically between the supplier
+      and the marketplace with a floating commission.</p>
+    <a class="btn" href="https://github.com/alisamadzadeh46/YadakMarketOnline">View the source</a>
+    <a class="btn ghost" href="#screenshots">See the screenshots</a>
+    <img class="hero-shot" src="screenshots/storefront-shop.png" alt="Storefront">
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <h2>Highlights</h2>
+    <p class="lead">Built with Django REST Framework and Next.js, running in Docker. The interface is Persian
+      (right-to-left, Jalali calendar).</p>
+    <div class="grid">
+      <div class="card"><h3>Multi-vendor</h3><p>Each supplier manages its own products, orders, coupons, reports and earnings. The site owner controls the whole marketplace.</p></div>
+      <div class="card"><h3>Floating commission</h3><p>A default rate that moves inside a min/max band, separate rates for shops and retail customers, and per-category overrides.</p></div>
+      <div class="card"><h3>Automatic revenue split</h3><p>Every confirmed order records the marketplace commission and each supplier's net share. VAT, shipping and supplier coupons are handled correctly.</p></div>
+      <div class="card"><h3>Wholesale ready</h3><p>Tiered volume pricing, minimum order quantities, carton sizes, KYC-approved shops and credit accounts with SMS reminders.</p></div>
+      <div class="card"><h3>Three ways to pay</h3><p>Card-to-card with receipt upload and a countdown, online payment (ZarinPal or BitPay), and credit purchases.</p></div>
+      <div class="card"><h3>Blog and SEO</h3><p>Rich-text blog with a Yoast-style analyzer, sitemap, structured data, and feeds for price-comparison sites.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How the commission is split</h2>
+    <p class="lead">For each order line the most specific rate wins: category, then buyer type, then the default.
+      Commission is charged on goods only, never on VAT or shipping.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Line</th><th>Supplier</th><th class="num">Goods</th><th>Rule</th><th class="num">Rate</th><th class="num">Commission</th><th class="num">Supplier net</th></tr></thead>
+        <tbody>
+          <tr><td>Brake pads</td><td>A</td><td class="num">1,800,000</td><td>category</td><td class="num">15%</td><td class="num">270,000</td><td class="num">1,530,000</td></tr>
+          <tr><td>Spark plugs</td><td>B</td><td class="num">1,000,000</td><td>customer rate</td><td class="num">12%</td><td class="num">120,000</td><td class="num">880,000</td></tr>
+          <tr><th>Total</th><th></th><th class="num">2,800,000</th><th></th><th class="num">13.93%</th><th class="num">390,000</th><th></th></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Panels for every role</h2>
+    <div class="grid">
+      <div class="card"><h3>Buyers</h3><ul><li>Filters, car finder, search suggestions</li><li>Server-side cart and address book with map</li><li>Order history, invoices, reorder</li></ul></div>
+      <div class="card"><h3>Suppliers</h3><ul><li>Dashboard with low-stock forecast</li><li>Order workflow with new-order alerts</li><li>Sales report with CSV export, earnings</li></ul></div>
+      <div class="card"><h3>Site owner</h3><ul><li>KYC review and credit accounts</li><li>Categories, blog, slider, SMS log</li><li>Gateway, payment methods, VAT and shipping</li></ul></div>
+      <div class="card"><h3>Revenue-share partner</h3><ul><li>Income dashboard by supplier and buyer type</li><li>Commission ledger with CSV export</li><li>Rate settings within the agreed band</li></ul></div>
+    </div>
+  </section>
+
+  <section id="screenshots">
+    <h2>Screenshots</h2>
+    <p class="lead">All screenshots use generated demo data. Click an image to open it at full size.</p>
+    <div class="tabs" role="tablist"></div>
+    <div class="gallery"></div>
+  </section>
+
+  <section>
+    <h2>Technology</h2>
+    <div class="stack">
+      <span>Python 3.13</span><span>Django 5.2 LTS</span><span>Django REST Framework</span><span>Celery</span>
+      <span>PostgreSQL 17</span><span>Redis 8</span><span>Next.js 16</span><span>React 19</span>
+      <span>TypeScript</span><span>Docker Compose</span><span>nginx</span>
+    </div>
+  </section>
+</main>
+
+<footer>YadakMarket Online · <a href="https://github.com/alisamadzadeh46/YadakMarketOnline">github.com/alisamadzadeh46/YadakMarketOnline</a></footer>
+
+<div class="viewer" role="dialog" aria-label="Screenshot"><img alt=""></div>
+
+<script>
+  const GROUPS = {
+    "Storefront": [
+      ["storefront-home", "Home page"], ["storefront-shop", "Shop with filters"],
+      ["storefront-product", "Product page"], ["storefront-blog", "Blog"],
+      ["storefront-rare-part", "Rare-part request"], ["storefront-mobile", "Mobile"]
+    ],
+    "Buying": [
+      ["customer-cart", "Cart"], ["customer-checkout", "Checkout"],
+      ["customer-order-payment", "Card-to-card payment"], ["customer-orders", "Order history"],
+      ["shop-panel", "Shop dashboard"], ["shop-credit", "Shop credit and invoices"]
+    ],
+    "Supplier": [
+      ["supplier-dashboard", "Dashboard"], ["supplier-orders", "Orders"],
+      ["supplier-products", "Products"], ["supplier-reports", "Sales report"],
+      ["supplier-earnings", "Earnings"], ["supplier-coupons", "Coupons"]
+    ],
+    "Site owner": [
+      ["admin-kyc", "Shop KYC review"], ["admin-credit", "Credit accounts"],
+      ["admin-settings", "Settlement reminders"], ["admin-categories", "Categories and brands"],
+      ["admin-blog-seo", "Blog with SEO scores"], ["admin-sms", "SMS log"],
+      ["admin-gateway", "Online gateway"], ["admin-payment-methods", "Payment methods"],
+      ["admin-checkout-costs", "VAT and shipping"]
+    ],
+    "Partner": [
+      ["partner-dashboard", "Revenue dashboard"], ["partner-commission-settings", "Commission settings"],
+      ["partner-ledger", "Commission ledger"]
+    ]
+  };
+
+  const tabs = document.querySelector(".tabs");
+  const gallery = document.querySelector(".gallery");
+  const viewer = document.querySelector(".viewer");
+
+  function show(group) {
+    tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", b.textContent === group));
+    gallery.innerHTML = "";
+    for (const [file, caption] of GROUPS[group]) {
+      const figure = document.createElement("figure");
+      const img = document.createElement("img");
+      img.src = `screenshots/${file}.png`;
+      img.alt = caption;
+      img.loading = "lazy";
+      img.addEventListener("click", () => {
+        viewer.querySelector("img").src = img.src;
+        viewer.classList.add("open");
+      });
+      const text = document.createElement("figcaption");
+      text.textContent = caption;
+      figure.append(img, text);
+      gallery.append(figure);
+    }
+  }
+
+  for (const group of Object.keys(GROUPS)) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.role = "tab";
+    button.textContent = group;
+    button.addEventListener("click", () => show(group));
+    tabs.append(button);
+  }
+  viewer.addEventListener("click", () => viewer.classList.remove("open"));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") viewer.classList.remove("open"); });
+  show("Storefront");
+</script>
+</body>
+</html>
