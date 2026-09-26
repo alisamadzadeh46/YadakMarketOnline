@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits that stage sensitive files or content.
+. "$(dirname "$0")/_guard.sh"
+run_guard staged

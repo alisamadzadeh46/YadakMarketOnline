@@ -1,0 +1,10 @@
+# Normalise line endings in the repository; check out with the platform default.
+* text=auto
+
+# Shell scripts and git hooks must keep LF endings to run under Git Bash and Linux.
+*.sh text eol=lf
+.githooks/* text eol=lf
+
+# Windows scripts keep CRLF endings.
+*.bat text eol=crlf
+*.cmd text eol=crlf

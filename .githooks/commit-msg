@@ -1,0 +1,6 @@
+#!/bin/sh
+# Blocks commit messages that contain sensitive data or restricted terms.
+# Git runs hooks from the top of the work tree, so a relative message file
+# path stays valid after run_guard changes to that directory.
+. "$(dirname "$0")/_guard.sh"
+run_guard commit-msg "$1"

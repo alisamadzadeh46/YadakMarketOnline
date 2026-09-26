@@ -1,0 +1,124 @@
+# =============================================================================
+# Sensitive data - must never be committed
+# =============================================================================
+
+# Environment files with real credentials (keep only the empty template)
+.env
+.env.*
+*.env
+!.env.example
+
+# Project specific restricted terms used by tools/repo_guard
+.repo-guard.local
+
+# Machine or server specific settings
+local_settings.py
+settings_local.py
+secrets/
+secrets.json
+credentials.json
+
+# Keys, certificates and credential stores
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.kdbx
+*.ovpn
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# Databases and dumps (real customer and seller records)
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+*.db
+*.sql
+*.dump
+*.psql
+*.rdb
+*.mdb
+*.accdb
+*dumpdata*.json
+
+# Backups and archives
+backup/
+backups/
+*.bak
+*.backup
+*.old
+*.orig
+*~
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.tgz
+
+# Data exports
+*export*.csv
+*.xls
+*.xlsx
+
+# User uploads (product photos, seller documents)
+media/
+uploads/
+
+# Domain verification files served from the web root
+/[0-9]*.txt
+
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test, type-check and lint caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+
+# =============================================================================
+# Django / runtime
+# =============================================================================
+staticfiles/
+static_root/
+*.log
+logs/
+celerybeat-schedule
+celerybeat.pid
+
+# =============================================================================
+# Front-end
+# =============================================================================
+node_modules/
+
+# =============================================================================
+# Editors and operating systems
+# =============================================================================
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

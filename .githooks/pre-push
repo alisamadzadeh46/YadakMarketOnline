@@ -1,0 +1,5 @@
+#!/bin/sh
+# Re-checks every commit that is about to be pushed, including commits
+# created with --no-verify or before the hooks were installed.
+. "$(dirname "$0")/_guard.sh"
+run_guard pre-push "$@"

@@ -1,0 +1,15 @@
+# Lint and format settings shared by the whole project.
+line-length = 120
+
+extend-exclude = ["**/migrations/*.py"]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "SIM", # simplifications
+]
