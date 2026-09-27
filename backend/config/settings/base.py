@@ -15,7 +15,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
-    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:3000"]),
+    # The storefront in the development compose file is published on port 3010.
+    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:3010"]),
 )
 
 # Read a .env file if present (docker-compose also injects real env vars).
@@ -269,7 +270,7 @@ DEFAULT_SELLER_NAME = env("DEFAULT_SELLER_NAME", default="فروشگاه لوا�
 
 # Where the frontend lives — links in SMS/e-mails point here, and the payment
 # gateway callback redirects the buyer's browser here after verification.
-FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000").rstrip("/")
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3010").rstrip("/")
 
 # ---- Email (SMTP; used for the password-reset link) -------------------------
 # Credentials come from the environment — never committed. Without a host
