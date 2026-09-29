@@ -20,26 +20,36 @@ EARNING_STATUSES = {
     Order.Status.SHIPPED,
     Order.Status.DELIVERED,
 }
+# A credit order is live from placement through delivery, but its money only
+# arrives when the credit invoice is settled.
+CREDIT_LIVE_STATUSES = EARNING_STATUSES | {Order.Status.CREDIT}
+
+
+def _credit_sale_is_earned(order):
+    """Recognised on placement if the owner chose so, otherwise once the invoice is settled."""
+    if CommissionSetting.load().accrue_on_credit_order:
+        return True
+    invoice = getattr(order, "credit_invoice", None)
+    return bool(invoice and invoice.is_settled)
 
 
 @receiver(post_save, sender=Order)
 def sync_commission(sender, instance, created, **kwargs):
-    if instance.status in EARNING_STATUSES:
+    if instance.status == Order.Status.CANCELED:
+        void_commission(instance)
+    elif instance.payment_method == Order.PaymentMethod.CREDIT:
+        if instance.status not in CREDIT_LIVE_STATUSES:
+            return
+        # Shipping a credit order does not pay for it, so the fulfilment status
+        # must not turn a pending commission into income.
+        earned = _credit_sale_is_earned(instance)
+        record_commission(instance, status=CommissionEntry.Status.EARNED if earned else CommissionEntry.Status.PENDING)
+        record_supplier_shares(
+            instance, status=OrderSupplierShare.Status.EARNED if earned else OrderSupplierShare.Status.PENDING
+        )
+    elif instance.status in EARNING_STATUSES:
         record_commission(instance)
         record_supplier_shares(instance)
-    elif instance.status == Order.Status.CREDIT:
-        # Credit sales are recognised now or at settlement, owner's choice.
-        setting = CommissionSetting.load()
-        entry_status = (
-            CommissionEntry.Status.EARNED if setting.accrue_on_credit_order else CommissionEntry.Status.PENDING
-        )
-        share_status = (
-            OrderSupplierShare.Status.EARNED if setting.accrue_on_credit_order else OrderSupplierShare.Status.PENDING
-        )
-        record_commission(instance, status=entry_status)
-        record_supplier_shares(instance, status=share_status)
-    elif instance.status == Order.Status.CANCELED:
-        void_commission(instance)
 
 
 @receiver(post_save, sender="suppliers.CreditInvoice")

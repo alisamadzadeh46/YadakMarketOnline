@@ -182,9 +182,11 @@ class SupplierCouponTests(MarketplaceFixture):
         setting = CommissionSetting.load()
         setting.beneficiary = self.admin
         setting.save()
-        order = self.order_with(self.product_a, self.product_b, status=Order.Status.CONFIRMED)
+        # The coupon is part of the order before it is confirmed, as at checkout.
+        order = self.order_with(self.product_a, self.product_b)
         order.discount_amount = 50_000
         order.discount_supplier = self.supplier_a
+        order.status = Order.Status.CONFIRMED
         order.save()
         shares = {share.supplier_id: share for share in record_supplier_shares(order)}
         self.assertEqual(shares[self.supplier_a.id].gross_amount, 50_000)

@@ -68,10 +68,13 @@ def calculate_for_order(order, setting=None):
 
 @transaction.atomic
 def record_commission(order, status=None):
-    """Create or refresh the commission row for an order (idempotent).
+    """Record the commission row for an order (idempotent).
 
-    Called when an order is confirmed/paid. Returns the entry, or None when the
-    feature is switched off or no beneficiary is configured yet.
+    Called on every save of a live order. The figures are fixed when the row is
+    created; later calls only move a pending row forward, so a rate change
+    never rewrites a sale that was already recognised. A void row (the order
+    was canceled and has come back) is recognised afresh. Returns the entry, or
+    None when the feature is switched off or no beneficiary is configured yet.
     """
     setting = CommissionSetting.load()
     if not setting.is_active or not setting.beneficiary_id:
@@ -95,11 +98,19 @@ def record_commission(order, status=None):
             "status": status or CommissionEntry.Status.EARNED,
         },
     )
-    if not created and entry.status in (CommissionEntry.Status.PENDING, CommissionEntry.Status.VOID):
-        # Pending → earned when a credit invoice finally settles.
-        entry.status = status or CommissionEntry.Status.EARNED
+    if created:
+        return entry
+
+    new_status = status or CommissionEntry.Status.EARNED
+    if entry.status == CommissionEntry.Status.VOID:
+        # A canceled order that came back is a new sale, priced at today's rates.
+        entry.status = new_status
         entry.base_amount, entry.amount, entry.effective_rate = base, amount, rate
         entry.save(update_fields=["status", "base_amount", "amount", "effective_rate"])
+    elif entry.status == CommissionEntry.Status.PENDING and new_status != entry.status:
+        # Pending → earned: only the status moves, the figures stay as recorded.
+        entry.status = new_status
+        entry.save(update_fields=["status"])
     return entry
 
 
@@ -120,7 +131,9 @@ def record_supplier_shares(order, status=None, setting=None):
     Uses the same lines as ``calculate_for_order`` (same discount spreading,
     same per-category rate resolution) but groups them by ``product.supplier`` so every
     supplier gets their own row: how much they sold, what the site owner took,
-    and what is left for them. Idempotent — re-runs refresh the snapshot.
+    and what is left for them. Idempotent, with the same rules as
+    ``record_commission``: an earned or paid row is never recalculated, a
+    pending row only changes status, and a void row is recognised afresh.
     """
     setting = setting or CommissionSetting.load()
     if not setting.is_active or not setting.beneficiary_id:
@@ -142,24 +155,26 @@ def record_supplier_shares(order, status=None, setting=None):
         g = int(line_gross.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
         c = int(commission.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
         c = min(c, g)  # never take more than the sale
-        net = g - c
-        eff = _effective_rate(c, g)
-        obj = OrderSupplierShare.objects.filter(order=order, supplier_id=supplier_id).first()
-        if obj and obj.status == OrderSupplierShare.Status.PAID:
-            entries.append(obj)  # settled already — leave it untouched
-            continue
-        obj, _ = OrderSupplierShare.objects.update_or_create(
+        figures = {
+            "gross_amount": g,
+            "owner_commission": c,
+            "supplier_net": g - c,
+            "effective_rate": _effective_rate(c, g),
+        }
+        share, created = OrderSupplierShare.objects.get_or_create(
             order=order,
             supplier_id=supplier_id,
-            defaults={
-                "gross_amount": g,
-                "owner_commission": c,
-                "supplier_net": net,
-                "effective_rate": eff,
-                "status": default_status,
-            },
+            defaults={**figures, "status": default_status},
         )
-        entries.append(obj)
+        if not created and share.status == OrderSupplierShare.Status.VOID:
+            for field, value in figures.items():
+                setattr(share, field, value)
+            share.status = default_status
+            share.save(update_fields=[*figures, "status"])
+        elif not created and share.status == OrderSupplierShare.Status.PENDING and default_status != share.status:
+            share.status = default_status
+            share.save(update_fields=["status"])
+        entries.append(share)
     return entries
 
 

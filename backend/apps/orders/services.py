@@ -179,6 +179,12 @@ def create_order_from_cart(*, user, address, payment_method, coupon_code=""):
         coupon.save(update_fields=["used_count"])
         CouponRedemption.objects.create(coupon=coupon, user=user, order=order, amount=discount)
 
+    # A credit order is live the moment it is placed, but its post_save ran
+    # before the lines above existed, so listeners that read the lines (the
+    # commission engine) saw an empty order. Save once more now it is complete.
+    if is_credit:
+        order.save(update_fields=["status"])
+
     # Empty the cart now that it has become an order — EXCEPT for online
     # orders, which are not paid yet. If the gateway errors out, the buyer
     # cancels, or the bank simply times out, emptying the cart here would

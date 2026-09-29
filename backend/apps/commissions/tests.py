@@ -4,15 +4,18 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from apps.accounts.models import User
+from apps.accounts.models import Address, User
 from apps.catalog.models import Brand, Category, Product
 from apps.commissions.models import (
     CategoryCommissionRate,
     CommissionEntry,
     CommissionSetting,
+    OrderSupplierShare,
 )
 from apps.commissions.services import calculate_for_order, record_commission
-from apps.orders.models import Order, OrderItem
+from apps.orders.models import Cart, CartItem, Order, OrderItem
+from apps.orders.services import create_order_from_cart
+from apps.suppliers.models import CreditAccount
 
 
 class CommissionCalculationTests(TestCase):
@@ -154,3 +157,86 @@ class RecordCommissionTests(CommissionCalculationTests):
         order.user = self.owner
         order.save()
         self.assertIsNone(record_commission(order))
+
+
+class CommissionLifecycleTests(TestCase):
+    """How the recorded commission follows an order from checkout onwards."""
+
+    def setUp(self):
+        self.owner = User.objects.create_superuser(phone="09121111111", password="Sample-Passw0rd!")
+        self.supplier = User.objects.create_user(phone="09123333333", role=User.Role.SUPPLIER, is_approved=True)
+        self.shop = User.objects.create_user(phone="09124444444", role=User.Role.SHOPKEEPER, is_approved=True)
+        CreditAccount.objects.create(supplier=self.supplier, shop=self.shop, credit_limit=10_000_000)
+        self.product = Product.objects.create(
+            name="لنت",
+            slug="brake-pad",
+            sku="SKU-L1",
+            category=Category.objects.create(name="ترمز", slug="brake"),
+            brand=Brand.objects.create(name="سایپا", slug="saipa"),
+            price=100_000,
+            stock=10,
+            supplier=self.supplier,
+        )
+        self.setting = CommissionSetting.load()
+        self.setting.beneficiary = self.owner
+        self.setting.save()
+
+    def _credit_checkout(self):
+        address = Address.objects.create(
+            user=self.shop,
+            title="انبار",
+            receiver_name="ت",
+            receiver_phone=self.shop.phone,
+            province="تهران",
+            city="تهران",
+            line="خیابان",
+        )
+        cart = Cart.objects.create(user=self.shop)
+        CartItem.objects.create(cart=cart, product=self.product, quantity=1)
+        return create_order_from_cart(user=self.shop, address=address, payment_method=Order.PaymentMethod.CREDIT)
+
+    def _move_to(self, order, status):
+        order.status = status
+        order.save(update_fields=["status"])
+
+    def test_a_credit_order_is_recorded_at_checkout(self):
+        order = self._credit_checkout()
+        entry = CommissionEntry.objects.get(order=order)
+        share = OrderSupplierShare.objects.get(order=order)
+        self.assertEqual((entry.amount, entry.status), (10_000, CommissionEntry.Status.EARNED))
+        self.assertEqual((share.supplier_net, share.status), (90_000, OrderSupplierShare.Status.EARNED))
+
+    def test_a_credit_commission_waits_for_settlement_when_configured(self):
+        self.setting.accrue_on_credit_order = False
+        self.setting.save()
+        order = self._credit_checkout()
+        self._move_to(order, Order.Status.PROCESSING)  # shipping it does not pay for it
+        self.assertEqual(CommissionEntry.objects.get(order=order).status, CommissionEntry.Status.PENDING)
+        self.assertEqual(OrderSupplierShare.objects.get(order=order).status, OrderSupplierShare.Status.PENDING)
+
+        order.credit_invoice.settle()
+        self.assertEqual(CommissionEntry.objects.get(order=order).status, CommissionEntry.Status.EARNED)
+        self.assertEqual(OrderSupplierShare.objects.get(order=order).status, OrderSupplierShare.Status.EARNED)
+
+    def test_a_rate_change_does_not_rewrite_a_recognised_sale(self):
+        order = self._credit_checkout()
+        self.setting.default_rate = Decimal("20.00")
+        self.setting.save()
+        self._move_to(order, Order.Status.PROCESSING)
+        entry = CommissionEntry.objects.get(order=order)
+        share = OrderSupplierShare.objects.get(order=order)
+        self.assertEqual((entry.amount, entry.effective_rate), (10_000, Decimal("10.00")))
+        self.assertEqual((share.owner_commission, share.effective_rate), (10_000, Decimal("10.00")))
+
+    def test_a_canceled_order_that_comes_back_is_recognised_afresh(self):
+        order = self._credit_checkout()
+        self._move_to(order, Order.Status.CANCELED)
+        self.assertEqual(CommissionEntry.objects.get(order=order).status, CommissionEntry.Status.VOID)
+
+        self.setting.default_rate = Decimal("20.00")
+        self.setting.save()
+        self._move_to(order, Order.Status.CREDIT)
+        entry = CommissionEntry.objects.get(order=order)
+        share = OrderSupplierShare.objects.get(order=order)
+        self.assertEqual((entry.amount, entry.status), (20_000, CommissionEntry.Status.EARNED))
+        self.assertEqual((share.owner_commission, share.status), (20_000, OrderSupplierShare.Status.EARNED))
