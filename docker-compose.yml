@@ -64,7 +64,10 @@ services:
 
   celery_worker:
     build: ./backend
-    command: celery -A config worker -l info
+    # Without -Q a worker only consumes the default queue, and SMS tasks are
+    # routed to their own `sms` queue (see CELERY_TASK_ROUTES). One worker
+    # serves both here; production runs a dedicated SMS worker instead.
+    command: celery -A config worker -l info -Q default,sms
     env_file: .env
     volumes:
       - ./backend:/app
